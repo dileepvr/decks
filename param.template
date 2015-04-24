@@ -1,0 +1,12 @@
+# Comment 1
+# Comment 2
+Not a Comment
+# LOOOOOOOOOOOOOOOOOOOOOOG COMMENT AS IN REALLY
+teststr := le_string
+#BOO!
+
+blah := 42.0
+
+testint := 47
+debug_trace := false
+# This is the end
