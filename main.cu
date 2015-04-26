@@ -34,7 +34,7 @@ int main(int argc, char* argv[]) {
   initialize_shoe(shoe, ndecks);
   shuffle(shoe, ndecks);
 
-  for(i = 0; i < ndecks*13; i++) {
+  for(i = 0; i < ndecks*52; i++) {
     printf("shoe[%d] = %d\n", i, shoe[i]);
   }
   
@@ -87,7 +87,7 @@ void shuffle( int* arr, int ndeck ) {
   for (kk = 0; kk < 3; kk++) {
     // Start from the last element and swap one by one. We don't
     // need to run for the first element that's why ii > 0
-    for (ii = ndeck*13-1; ii > 0; ii--){
+    for (ii = ndeck*52-1; ii > 0; ii--){
 
       // Pick a random index from 0 to ii
       jj = rand() % (ii+1);
@@ -100,15 +100,14 @@ void shuffle( int* arr, int ndeck ) {
 
 void initialize_shoe(int* arr, int ndeck) {
 
-  // 1s are aces
+  // 1s are aces, J = 11, Q = 12, K = 13
   for (int ii = 0; ii < ndeck; ii++) {
-    for (int kk = 0; kk < 10; kk++) {
-      arr[ii*10+kk] = kk+1;
+    for (int jj = 0; jj < 4; jj++) {    
+      for (int kk = 0; kk < 13; kk++) {
+	arr[ii*52+jj*13+kk] = kk+1;
+      }
     }
   }
-  // Fill up remaining face-10s
-  for (int ll = 0; ll < 3*ndeck; ll++) {
-    arr[ndeck*10+ll] = 10;
-  }
+
 
 }
