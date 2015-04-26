@@ -14,22 +14,24 @@ LIBDIR = -L/usr/lib -L$(CUDA_PATH)/lib64
 CC = nvcc
 GCC = gcc
 CFLAGS = $(COMPILERFLAGS) $(INCLUDE)
-#LIBRARIES = -lglut -lopengl32 -lGLU -lm -lalut -lopenal
 LIBRARIES = -lcurand
 COMPILERFLAGS = -ccbin $(GCC)
 
-TEST_FILES = main.o
 EXECUTABLE = main
+OBJFILES = main.o fileio.o
 
 all: $(EXECUTABLE)
 
 
-$(EXECUTABLE): main.o 
-	$(CC) $(CFLAGS) -o $(EXECUTABLE) $(LIBDIR) $(LIBRARIES)\
-	 main.o 
+$(EXECUTABLE): $(OBJFILES)
+	$(CC) $(CFLAGS) -o $(EXECUTABLE) $(LIBDIR)\
+	 $(OBJFILES) $(LIBRARIES)
 
 main.o: main.cu
 	$(CC) -c main.cu
+
+fileio.o: fileio.c
+	$(CC) -c fileio.c
 
 clean:
 	rm -f *.o $(EXECUTABLE)

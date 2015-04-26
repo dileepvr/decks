@@ -1,12 +1,35 @@
-# Comment 1
-# Comment 2
-Not a Comment
-# LOOOOOOOOOOOOOOOOOOOOOOG COMMENT AS IN REALLY
-teststr := le_string
-#BOO!
+# Comments start with a hash, but not using hashes doesn't break anything.
+# Parameters can appear in any order.
+# Only first occurence will be read.
 
-blah := 42.0
+# 'debug_trace' (true or false) is a boolean print-out flag
+debug_trace := true
 
-testint := 47
-debug_trace := false
-# This is the end
+# 'ndecks' is integer for number of decks in the shoe (1 to 8)
+ndecks := 1
+
+# 'penetration' is the float shoe penetration percentage (10 minimum)
+penetration := 100.0
+
+# 'bank' is the float starting bank size
+bank := 1000.0
+
+# 'minbet' is the float minimum bet
+minbet := 5.0
+
+# 'betspread' is the float ratio of maxbet/minbet
+# If maxbet > bank, entire bank might be bet
+betspread := 10.0
+
+# 'ntrials' is the integer number of trials
+ntrials := 10000
+
+# 'houserules' is the integer house rule set
+# Currently not used
+houserules := 0
+
+# 'strategy' is the integer strategy to test
+# 0 - Basic strategy (no counting)
+strategy := 0
+
+
