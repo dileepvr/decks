@@ -1,3 +1,16 @@
+void updateptotal();
+void hitdeal();
+void recomputeptotal();
+void resolvedeal();
+int pdecision();
+void splitdeal();
+void play();
+void cleartable();
+void opendraw();
+int verb(int);
+int openbet();
+bool handbust();
+bool trialover(int);
 void read_params(char*);
 void swap(int*, int*);
 void shuffle(int*, int);

@@ -29,7 +29,14 @@ ntrials := 10000
 houserules := 0
 
 # 'strategy' is the integer strategy to test
-# 0 - Basic strategy (no counting)
+# 0 - Test strategy (keep betting minbet)
+# 1 - Basic strategy (no counting)
 strategy := 0
 
 
+# 'nbets' is the integer that determines
+# what ends a trial
+# 0 - End trial when bank <= 0
+# N - (N > 0) End trial after N bets or when bank <= 0
+# M - (M < 0) End trial after |M| bets regardless of bank
+nbets := 100
