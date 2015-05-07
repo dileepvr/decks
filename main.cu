@@ -93,6 +93,7 @@ void resolvedeal() {
   // Check player busts and finish dealer card draws
   handno = nhands-1;
   
+  
 }
 
 void splitdeal() {
