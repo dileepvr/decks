@@ -1,4 +1,6 @@
+void printhands();
 void updateptotal();
+void updatedtotal();
 void hitdeal();
 void recomputeptotal();
 void resolvedeal();

@@ -1,0 +1,25 @@
+***********************************************************
+Entry on 05-06-15 by Dileep
+***********************************************************
+
+Okay. So far, it works in CPU.
+Tested by running a single trial with one bet and printing entire table to stdout. Type 'make check' to execute.
+Cards are numbered 1 through 13. 1 is ace.
+
+All parameters are supplied through a param file.
+Refer to param.template for sample values.
+
+Add new strategy rules to function pdecision().
+
+shoe[52*8] array contains cards in shoe.
+dealer[21] array contains cards drawn by dealer.
+player[8][21] contains cards drawn by player.
+Its a 2D array to account for split hands.
+bets[8] contains bets on each hand (accounting for splits).
+bank contains total bank.
+
+Quite a few global variables like handno, cardno, nhands, etc. are important and shouldn't be used unless you know what you are doing.
+
+Time to make a scheme where bank after N trials are stored in a text
+file, which can be plotted later. (bank resets at start of each trial,
+see param.template)

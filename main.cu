@@ -24,7 +24,7 @@ char mystring[64];
 int shoe[52*8], dealer[21], player[8][21];
 float bets[8];
 int ncards, maxcardpos, cardpos = 0;
-int handno, cardno, nhands, ptotal[8], paces[8], dtotal, daces;
+int handno, cardno, nhands, ptotal[8], paces[8], dtotal, daces, dcardno;
 
 int main(int argc, char* argv[]) {
 
@@ -46,13 +46,14 @@ int main(int argc, char* argv[]) {
 }
 
 void play() {
-  int curbets = 0, playeraction, flag = 0;
+  int curbets = 1, playeraction, flag = 0;
   bank = startbank;
   while ( !trialover(curbets) ) {
+    curbets++;
     handno = 0, nhands = 1;    
     opendraw();
     while( flag == 0 ) {
-      playeraction = verb(1);      
+      playeraction = verb(1);
       switch(playeraction) {
       case 0: // surrender
 	bank += bets[handno--]/2.0;
@@ -85,14 +86,87 @@ void play() {
       }
     }
     resolvedeal();
+    printhands();
+  }
+}
+
+void printhands() {
+  int ll, temp;
+
+  printf("Dealer: ");
+  for(ll = 0; ll < dcardno; ll++) {
+    printf("%d ", dealer[ll]);
+  }
+  printf("\ndtotal = %d ", dtotal);
+  if (dtotal > 21) { printf("(BUST!)\n"); }
+  else { printf("\n"); }
+
+  for(temp = 0; temp < nhands; temp++) {
+    printf("Player hand %d: ", temp);
+    ll = 0;
+    while(player[temp][ll] != 0) {
+      printf("%d ", player[temp][ll++]);
+    } printf("\nptotal = %d ",ptotal[temp]);
+    if(ptotal[temp] > 21){
+      printf("(BUST!)\n");
+    } else if (ptotal[temp] == dtotal) {
+      printf("(PUSH!)\n");      
+    } else if((ptotal[temp] > dtotal) || (dtotal > 21)) {
+      printf("(WIN!)\n");            
+    } else {
+      printf("(LOSS!)\n");                  
+    }
   }
 }
 
 void resolvedeal() {
 
+  // Surrender not being accounted for right now
+  bool allbusted = true;
+  dcardno = 2;
   // Check player busts and finish dealer card draws
-  handno = nhands-1;
-  
+  for(handno = 0; handno < nhands; handno++) {
+    recomputeptotal();
+    if(ptotal[handno] <= 21) { allbusted = false; }
+  }
+
+  if(!allbusted) {
+    if(dealer[0] == 1) {
+      dtotal += 11; dsoft = true; daces++;
+    } else if (dealer[0] > 10) {
+      dtotal += 10;
+    } else { dtotal += dealer[0]; }
+
+    if(dtotal > 21) {
+      while(daces > 0) {
+	dtotal -= 10;
+	if(dtotal <= 21) { daces--; break; }
+      }
+    }
+
+    // Modify soft-17 rule based on 'houserules' parameter
+    while((dtotal < 17) || ((dtotal == 17) && (daces > 0))) {
+      if( cardpos >= maxcardpos ) {
+	shuffle(shoe, ndecks);
+	cardpos = 0;
+      }
+      dealer[dcardno++] = shoe[cardpos++];
+      updatedtotal();
+    }
+
+    for(handno = 0; handno < nhands-1; handno++) {
+      if((ptotal[handno] <= 21) && ((ptotal[handno] > dtotal) || (dtotal > 21))) {
+	// Check for Blackjack
+	// Modify this according to 'houserules' parameter
+	if((ptotal[handno] == 21) && (player[handno][2] == 0)) {
+	  bank += 2.5*bets[handno];
+	} else {
+	  bank += 2*bets[handno];
+	}
+      }
+
+    }
+  }
   
 }
 
@@ -134,7 +208,7 @@ void hitdeal() {
 
 void recomputeptotal() {
 
-  cardno = 0; ptotal[handno] = 0;
+  cardno = 0; ptotal[handno] = 0; paces[handno] = 0;
   while( player[handno][cardno] != 0 ) {
     if (player[handno][cardno] == 1) {
       ptotal[handno] += 11; psoft = true;
@@ -144,10 +218,12 @@ void recomputeptotal() {
     } else { ptotal[handno] += player[handno][cardno]; }
     cardno++;
   }
-  cardno--;
-  while(paces[handno] > 0) {
-    ptotal[handno] -= 10; paces[handno]--;
-    if (ptotal[handno] < 21) { break; }
+  //  cardno--;
+  if (ptotal[handno] > 21) {
+    while(paces[handno] > 0) {
+      ptotal[handno] -= 10; paces[handno]--;
+      if (ptotal[handno] <= 21) { break; }
+    }
   }
   if (paces[handno] == 0) { psoft = false; }
 
@@ -162,14 +238,37 @@ void updateptotal() {
   } else { ptotal[handno] += player[handno][cardno-1]; }
 
   if (ptotal[handno] > 21 ) {
-    for( int ll = 0; ll < cardno; ll++) {
-      if (player[handno][ll] == 1) { paces[handno]++; }
-    }
+    /*    for( int ll = 0; ll < cardno; ll++) {
+	  if (player[handno][ll] == 1) { paces[handno]++; }
+	  }
+    */
     while(paces[handno] > 0) {
       ptotal[handno] -= 10; paces[handno]--;
       if (ptotal[handno] < 21) { break; }
     }
     if (paces[handno] == 0) { psoft = false; }
+  }
+  
+}
+
+void updatedtotal() {
+
+  if (dealer[dcardno-1] == 1) {
+    dtotal += 11; dsoft = true; daces++;
+  } else if (dealer[dcardno-1] > 10) {
+    dtotal += 10;
+  } else { dtotal += dealer[dcardno-1]; }
+
+  if (dtotal > 21 ) {
+    /*    for( int ll = 0; ll < dcardno; ll++) {
+	  if (dealer[ll] == 1) { daces++; }
+	  }
+    */
+    while(daces > 0) {
+      dtotal -= 10; daces--;
+      if (dtotal< 21) { break; }
+    }
+    if (daces == 0) { dsoft = false; }
   }
   
 }
@@ -187,7 +286,7 @@ void opendraw() {
   dealer[1] = shoe[cardpos++];
   player[handno][0] = shoe[cardpos++];
   player[handno][1] = shoe[cardpos++];
-  cardno = 1;
+  cardno = 2;
 
   if (dealer[1] == 1) {
     dtotal = 11; dsoft = true; daces++;
@@ -210,7 +309,9 @@ void opendraw() {
 }
 
 bool handbust() {
-  if (ptotal[handno] > 21 && paces[handno] == 0) { return true; }
+  if (ptotal[handno] > 21 && paces[handno] == 0) {
+    return true;
+  }
   return false;
 }
 
@@ -247,8 +348,11 @@ int pdecision() {
   switch(strategy) {
   case 0: // Test strategy, hit if ptotal < 17, else stand
   default: // Same as case 0
-    if (ptotal[handno] < 17) { return 2; }
-    else { return 1; }
+    if (ptotal[handno] < 17) {
+      return 2;
+    } else {
+      return 1;
+    }
   }
  
 }
