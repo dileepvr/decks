@@ -6,6 +6,25 @@
 
 #include "fileio.h"
 
+void write_allbank(char* p_file, float* banks, int ntrials, int nbets) {
+  FILE *fp;
+  int ii, jj;
+
+  if((fp = fopen(p_file, "w")) == NULL) {
+    printf("Couldn't open file: %s\n", p_file);
+    exit(1);
+  }
+  
+  for(ii = 0; ii < ntrials; ii++) {
+    for(jj = 0; jj < nbets; jj++) {
+      fprintf(fp,"%f\t", banks[nbets*ii+jj]);
+    }
+    fprintf(fp,"\n");
+  }
+
+  fclose(fp);
+}
+
 void get_real_param(char* p_file, char* p_name, float* param, bool trace) {
 
   FILE *fp;

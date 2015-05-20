@@ -18,6 +18,7 @@ __global__ void mykernel() {
 }
 
 bool debug_trace = true, psoft = false, dsoft = false;
+bool record_allbank = false;
 int ndecks, ntrials, houserules, strategy, nbets;
 float penet, bank, startbank, minbet, betspread;
 char mystring[64];
@@ -25,6 +26,7 @@ int shoe[52*8], dealer[21], player[8][21];
 float bets[8];
 int ncards, maxcardpos, cardpos = 0;
 int handno, cardno, nhands, ptotal[8], paces[8], dtotal, daces, dcardno;
+float *allbank;
 
 int main(int argc, char* argv[]) {
 
@@ -39,17 +41,38 @@ int main(int argc, char* argv[]) {
   ncards = 52*8;
   maxcardpos = floor(ncards*penet);
 
-  startbank = bank;
-  for(i = 0; i < ntrials; i++) {
-    play();
+
+  if(record_allbank) {
+    allbank = (float*)malloc(sizeof(float)*ntrials*nbets);
   }
+  
+  startbank = bank;
+  if(debug_trace) { printf("Playing trials...."); }
+  for(i = 0; i < ntrials; i++) {
+    play(i);
+  }
+  if(debug_trace) { printf(" done.\n"); }  
+ 
+  if(record_allbank) {
+
+    sprintf(mystring,argv[1]);
+    strcat(mystring,".allbank.dat");
+    if(debug_trace) {
+      printf("Writing allbank to %s ....", mystring);
+    }    
+    write_allbank(mystring, allbank, ntrials, nbets);
+    if(debug_trace) { printf(" done.\n"); }    
+    free(allbank);
+
+  }
+ 
 }
 
-void play() {
+void play(int trialnum) {
   int curbets = 1, playeraction, flag = 0;
   bank = startbank;
   while ( !trialover(curbets) ) {
-    curbets++;
+    //    curbets++;
     handno = 0, nhands = 1;    
     opendraw();
     while( flag == 0 ) {
@@ -86,7 +109,11 @@ void play() {
       }
     }
     resolvedeal();
-    printhands();
+    if(record_allbank) {
+      allbank[nbets*trialnum+curbets-1] = bank;
+    }
+    curbets++;
+    //    printhands();
   }
 }
 
@@ -154,7 +181,7 @@ void resolvedeal() {
       updatedtotal();
     }
 
-    for(handno = 0; handno < nhands-1; handno++) {
+    for(handno = 0; handno < nhands; handno++) {
       if((ptotal[handno] <= 21) && ((ptotal[handno] > dtotal) || (dtotal > 21))) {
 	// Check for Blackjack
 	// Modify this according to 'houserules' parameter
@@ -407,7 +434,9 @@ void read_params(char* fname) {
   get_real_param(fname, mystring, &minbet, debug_trace);
   if (minbet > bank) { minbet = bank; }
   sprintf(mystring,"betspread");  
-  get_real_param(fname, mystring, &betspread, debug_trace);  
+  get_real_param(fname, mystring, &betspread, debug_trace);
+  sprintf(mystring,"record_allbank");
+  get_bool_param(fname, mystring, &record_allbank, debug_trace);
   
 }
 

@@ -6,7 +6,7 @@ void recomputeptotal();
 void resolvedeal();
 int pdecision();
 void splitdeal();
-void play();
+void play(int);
 void cleartable();
 void opendraw();
 int verb(int);
