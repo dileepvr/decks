@@ -45,4 +45,4 @@ nbets := 10
 # 'record_allbank' (true or false) determines whether or not
 # to write bank for every bet and every trial into file with
 # filename <basefilename>.allbank.dat
-record_allbank := true
+record_allbank := false

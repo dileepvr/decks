@@ -23,3 +23,35 @@ Quite a few global variables like handno, cardno, nhands, etc. are important and
 Time to make a scheme where bank after N trials are stored in a text
 file, which can be plotted later. (bank resets at start of each trial,
 see param.template)
+
+
+***********************************************************
+Entry on 05-20-15 by Dileep
+***********************************************************
+
+Statistics that need to be gathered:
+
+Average gain (+ve or -ve) per trial         (avegain)
+Standard deviation in gain for all trials   (siggain)
+Average gain per draw 	       	   	    (drawavegain)
+Standard deviation per draw		    (drawsiggain)
+Biggest gain per draw  			    (maxgain)
+Smallest gain per draw			    (mingain)
+Maximum bank any trial			    (maxbank)
+Minimum bank any trial			    (minbank)
+Maximum midtrial bank			    (maxmidbank)
+Minimum midtrial bank			    (minmidbank)
+
+Average bet size per trial		    (avebet)
+Standard deviation in bet size per trial    (sigbet)
+Maximum bet size any trial     	   	    (maxbet)
+Minimum bet size any trial		    (minebet)
+Number of bankruptcies per trial	    (nbankrupt)
+Average number of winning hands		    (nwinhands)
+Average number of player-hand busts	    (npbusts)
+Average number of dealer busts		    (ndbusts)
+
+Average number of decisions:
+(surrenders, stands, hits, doubles, splits)
+(nsur, 	     nstd,   nhits, ndbls,  nsplts)
+(fsur, 	     fstd,   fhits, fdbls,  fsplts)

@@ -28,6 +28,17 @@ int ncards, maxcardpos, cardpos = 0;
 int handno, cardno, nhands, ptotal[8], paces[8], dtotal, daces, dcardno;
 float *allbank;
 
+// Variables for statistics
+float avegain = 0.0, siggain = 0.0, drawavegain = 0.0, drawsiggain = 0.0;
+float maxgain = 0.0, mingain = 0.0, maxbank = 0.0, minbank = 0.0;
+float maxmidbank = 0.0, minmidbank = 0.0;
+float avebet = 0.0, sigbet = 0.0, maxbet = 0.0, minebet = 0.0;
+int nwinhands = 0, ndbusts = 0, npbusts = 0;
+float fwinhands = 0.0, fdbusts = 0.0, fpbusts = 0.0;
+int nsur = 0, nstd = 0, nhits = 0, ndbls = 0, nsplts = 0;
+int nbankrupt = 0, totalbets = 0;
+float fsur = 0.0, fstd = 0.0, fhits = 0.0, fdbls = 0.0, fsplts = 0.0;
+
 int main(int argc, char* argv[]) {
 
   int i;
@@ -41,17 +52,25 @@ int main(int argc, char* argv[]) {
   ncards = 52*8;
   maxcardpos = floor(ncards*penet);
 
+  allbank = (float*)malloc(sizeof(float)*ntrials*nbets);
 
-  if(record_allbank) {
-    allbank = (float*)malloc(sizeof(float)*ntrials*nbets);
-  }
   
   startbank = bank;
   if(debug_trace) { printf("Playing trials...."); }
   for(i = 0; i < ntrials; i++) {
     play(i);
   }
-  if(debug_trace) { printf(" done.\n"); }  
+  if(debug_trace) { printf(" done.\n"); }
+
+  if(debug_trace) { printf("Computing statistics...."); }
+  compute_stats();
+  if(debug_trace) { printf(" done.\n"); }
+
+  sprintf(mystring,argv[1]);
+  strcat(mystring,".stats.dat");
+  if(debug_trace) { printf("Writing stats...."); }
+  write_stats(mystring);
+  if(debug_trace) { printf(" done.\n"); }
  
   if(record_allbank) {
 
@@ -62,32 +81,39 @@ int main(int argc, char* argv[]) {
     }    
     write_allbank(mystring, allbank, ntrials, nbets);
     if(debug_trace) { printf(" done.\n"); }    
-    free(allbank);
-
   }
- 
+
+  free(allbank);
+
 }
 
 void play(int trialnum) {
   int curbets = 1, playeraction, flag = 0;
+  float stbank, stavebet;
   bank = startbank;
+  nsur = 0; nstd = 0; ndbusts = 0; nhits = 0; ndbls = 0; nsplts = 0;  
   while ( !trialover(curbets) ) {
     //    curbets++;
-    handno = 0, nhands = 1;    
+    handno = 0, nhands = 1;
+    stbank = bank;
+    stavebet = avebet;
     opendraw();
     while( flag == 0 ) {
       playeraction = verb(1);
       switch(playeraction) {
       case 0: // surrender
+	nsur++;
 	bank += bets[handno--]/2.0;
 	if (handno < 0) { flag = 1; } // Last hand surrendered
 	else { recomputeptotal(); }
 	break; 
       case 1: // stand
+	nstd++;
 	if (--handno < 0) { flag = 2; } // Last hand stood
 	else { recomputeptotal(); }	
 	break;
       case 2: // hit
+	nhits++;
 	hitdeal();
 	if (handbust()) {
 	  if (--handno < 0) { flag = 3; } // Last hand busted
@@ -95,13 +121,17 @@ void play(int trialnum) {
 	}
 	break;
       case 3: // double
+	ndbls++;
 	bank -= bets[handno];
+	avebet = avebet + bets[handno];
+	sigbet = sigbet + bets[handno]*bets[handno];
 	bets[handno] = 2*bets[handno];
 	hitdeal();
 	if (--handno < 0) { flag = 4; } // Last hand doubled
 	else { recomputeptotal(); }	
 	break;
       case 4: // split
+	nsplts++;
 	splitdeal(); // Not checking if split command is valid
 	break;
       default: // do nothing
@@ -109,12 +139,34 @@ void play(int trialnum) {
       }
     }
     resolvedeal();
-    if(record_allbank) {
-      allbank[nbets*trialnum+curbets-1] = bank;
-    }
+    allbank[nbets*trialnum+curbets-1] = bank;
+    if((bank - stbank) > maxgain) { maxgain = bank - stbank; }
+    if((bank - stbank) < mingain) { mingain = bank - stbank; }
+    if(bank > maxmidbank) { maxmidbank = bank; }
+    if(bank < minmidbank) { minmidbank = bank; }
+    if((avebet - stavebet) > maxbet) { maxbet = avebet - stavebet; }
+    if((avebet - stavebet) < minebet) { minebet = avebet - stavebet; }
+
     curbets++;
     //    printhands();
+
   }
+
+  if (bank > maxbank) { maxbank = bank; }
+  if (bank < minbank) { minbank = bank; }
+  if (bank <= 0.0) { nbankrupt++; }
+  
+  avegain = avegain + bank - startbank;
+  siggain = siggain + (bank - startbank)*(bank - startbank);
+  drawavegain = drawavegain + (bank - startbank)/(curbets-1);
+  drawsiggain = drawsiggain + (bank - startbank)/(curbets-1)*(bank - startbank)/(curbets-1);
+  fsur = fsur + 1.0*nsur/(curbets-1);
+  fstd = fstd + 1.0*nstd/(curbets-1);
+  fhits = fhits + 1.0*nhits/(curbets-1);
+  fdbls = fdbls + 1.0*ndbls/(curbets-1);
+  fsplts = fsplts + 1.0*nsplts/(curbets-1);  
+  totalbets = totalbets + curbets - 1;
+  
 }
 
 void printhands() {
@@ -155,6 +207,7 @@ void resolvedeal() {
   for(handno = 0; handno < nhands; handno++) {
     recomputeptotal();
     if(ptotal[handno] <= 21) { allbusted = false; }
+    else { npbusts++; }
   }
 
   if(!allbusted) {
@@ -169,6 +222,7 @@ void resolvedeal() {
 	dtotal -= 10;
 	if(dtotal <= 21) { daces--; break; }
       }
+      if(dtotal > 21) { ndbusts++; } 
     }
 
     // Modify soft-17 rule based on 'houserules' parameter
@@ -183,6 +237,7 @@ void resolvedeal() {
 
     for(handno = 0; handno < nhands; handno++) {
       if((ptotal[handno] <= 21) && ((ptotal[handno] > dtotal) || (dtotal > 21))) {
+	nwinhands++;
 	// Check for Blackjack
 	// Modify this according to 'houserules' parameter
 	if((ptotal[handno] == 21) && (player[handno][2] == 0)) {
@@ -205,6 +260,8 @@ void splitdeal() {
   }
   bank -= bets[handno++];
   bets[handno] = bets[handno-1];
+  avebet = avebet + bets[handno];
+  sigbet = sigbet + bets[handno]*bets[handno];
   player[handno+1][0] = player[handno++][1];
   player[handno-1][1] = shoe[cardpos++];
   player[handno][1] = shoe[cardpos++];
@@ -307,6 +364,8 @@ void opendraw() {
     cardpos = 0;
   }
   bets[handno] = verb(0);
+  avebet = avebet + bets[handno];
+  sigbet = sigbet + bets[handno]*bets[handno];
   bank -= bets[handno];
   // dealer[0] card is hidden from player
   dealer[0] = shoe[cardpos++];
@@ -480,4 +539,84 @@ void initialize_shoe(int* arr, int ndeck) {
     }
   }
 
+}
+
+void compute_stats() {
+
+  float invntrials;
+
+  invntrials = 1.0/ntrials;
+  
+  avegain = avegain*invntrials;
+  siggain = sqrt(siggain*invntrials - avegain*avegain);
+  drawavegain = drawavegain*invntrials;
+  drawsiggain = sqrt(drawsiggain*invntrials - drawavegain*drawavegain);
+  avebet = avebet/(totalbets);
+  sigbet = sqrt(sigbet/totalbets - avebet*avebet);
+
+  //  nbankrupt = nbankrupt*invntrials;
+  fwinhands = nwinhands*invntrials;
+  fpbusts = npbusts*invntrials;
+  fdbusts = ndbusts*invntrials;
+
+  fsur = fsur*invntrials;
+  fstd = fstd*invntrials;
+  fhits = fhits*invntrials;
+  fdbls = fdbls*invntrials;
+  fsplts = fsplts*invntrials;
+  
+}
+
+
+void write_stats(char* p_file) {
+
+  FILE *fp;
+
+  if((fp = fopen(p_file, "w")) == NULL) {
+    printf("Couldn't open file: %s\n", p_file);
+    exit(1);
+  }
+
+  fprintf(fp, "houserules = \t%d\n", houserules);
+  fprintf(fp, "strategy = \t%d\n", strategy);
+  fprintf(fp, "ntrials = \t%d\n", ntrials);
+  fprintf(fp, "nbets = \t%d\n\n", nbets);
+  
+  fprintf(fp, "ndecks = \t%d\n", ndecks);
+  fprintf(fp, "penetration = \t%f\n\n", penet);
+
+  fprintf(fp, "bank = \t\t%f\n", startbank);
+  fprintf(fp, "minbet = \t%f\n", minbet);
+  fprintf(fp, "betspread = \t%f\n\n", betspread);
+
+  fprintf(fp, "Average gain per trial = \t%f\n", avegain);
+  fprintf(fp, "Sigma gain over trials = \t%f\n", siggain);
+  fprintf(fp, "Average gain per draw = \t%f\n", drawavegain);
+  fprintf(fp, "Sigma gain over draws = \t%f\n\n", drawsiggain);
+
+  fprintf(fp, "Biggest gain per draw = \t%f\n", maxgain);
+  fprintf(fp, "Smallest gain per draw = \t%f\n", mingain);
+  fprintf(fp, "Bank Peak end of trial = \t%f\n", maxbank);
+  fprintf(fp, "Lowest bank end of trail = \t%f\n", minbank);
+  fprintf(fp, "Biggest bank peak = \t\t%f\n", maxmidbank);
+  fprintf(fp, "Lowest bank trough = \t\t%f\n\n", minmidbank);
+
+  fprintf(fp, "Average bet size = \t\t%f\n", avebet);
+  fprintf(fp, "Sigma of bet size = \t\t%f\n", sigbet);
+  fprintf(fp, "Biggest bet made = \t\t%f\n", maxbet);
+  fprintf(fp, "Smallest bet made = \t\t%f\n", minebet);
+  fprintf(fp, "Number of bankruptcies = \t%d\n\n", nbankrupt);
+
+  fprintf(fp, "Total number of bets made = \t\t%d\n", totalbets);
+  fprintf(fp, "Average number of winning hands per trial = \t%f\n", fwinhands);
+  fprintf(fp, "Average number of player busts per trial = \t%f\n", fpbusts);
+  fprintf(fp, "Average number of dealer busts per trial = \t%f\n\n", fdbusts);
+
+  fprintf(fp, "Average number of surrenders = \t%f\n", fsur);
+  fprintf(fp, "Average number of stands = \t%f\n", fstd);
+  fprintf(fp, "Average number of hits = \t%f\n", fhits);
+  fprintf(fp, "Average number of doubles = \t%f\n", fdbls);
+  fprintf(fp, "Average number of splits = \t%f\n", fsplts);
+  
+  fclose(fp);
 }

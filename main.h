@@ -17,3 +17,5 @@ void read_params(char*);
 void swap(int*, int*);
 void shuffle(int*, int);
 void initialize_shoe(int*, int);
+void compute_stats();
+void write_stats(char*);

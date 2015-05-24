@@ -6,6 +6,7 @@
 
 #include "fileio.h"
 
+
 void write_allbank(char* p_file, float* banks, int ntrials, int nbets) {
   FILE *fp;
   int ii, jj;
