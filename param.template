@@ -8,8 +8,8 @@ debug_trace := true
 # 'ndecks' is integer for number of decks in the shoe (1 to 8)
 ndecks := 1
 
-# 'penetration' is the float shoe penetration percentage (10 minimum)
-penetration := 100.0
+# 'penetration' is the float shoe penetration percentage (0.1 minimum)
+penetration := 1.0
 
 # 'bank' is the float starting bank size
 bank := 1000.0
@@ -22,7 +22,7 @@ minbet := 5.0
 betspread := 10.0
 
 # 'ntrials' is the integer number of trials
-ntrials := 5
+ntrials := 100
 
 # 'houserules' is the integer house rule set
 # Currently not used
@@ -31,6 +31,7 @@ houserules := 0
 # 'strategy' is the integer strategy to test
 # 0 - Test strategy (keep betting minbet)
 # 1 - Basic strategy (no counting)
+# 999 - split if possible, double if < 17, else stand (For testing)
 strategy := 0
 
 
@@ -39,7 +40,7 @@ strategy := 0
 # 0 - End trial when bank <= 0
 # N - (N > 0) End trial after N bets or when bank <= 0
 # M - (M < 0) End trial after |M| bets regardless of bank
-nbets := 10
+nbets := 1000
 
 
 # 'record_allbank' (true or false) determines whether or not

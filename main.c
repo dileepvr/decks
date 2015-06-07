@@ -3,14 +3,15 @@
 #include <stdbool.h>
 #include <errno.h>
 #include <string.h>
+#include <math.h>
 //#include <curand.h>
 //#include <curand_kernel.h>
 
 
 #include "main.h"
-extern "C" {
+//extern "C" {
 #include "fileio.h"
-}
+//}
 
 /*
 __global__ void mykernel() {
@@ -23,7 +24,8 @@ bool record_allbank = false;
 int ndecks, ntrials, houserules, strategy, nbets;
 float penet, bank, startbank, minbet, betspread;
 char mystring[64];
-int shoe[52*8], dealer[21], player[8][21];
+int shoe[416], player[8][21];
+int dealer[21];
 float bets[8];
 int ncards, maxcardpos, cardpos = 0;
 int handno, cardno, nhands, ptotal[8], paces[8], dtotal, daces, dcardno;
@@ -40,6 +42,8 @@ int nsur = 0, nstd = 0, nhits = 0, ndbls = 0, nsplts = 0;
 int nbankrupt = 0, totalbets = 0;
 float fsur = 0.0, fstd = 0.0, fhits = 0.0, fdbls = 0.0, fsplts = 0.0;
 
+int *testarray;
+
 int main(int argc, char* argv[]) {
 
   int i;
@@ -52,9 +56,12 @@ int main(int argc, char* argv[]) {
   shuffle(shoe, ndecks);
 
   ncards = 52*8;
-  maxcardpos = floor(ncards*penet);
+  maxcardpos = floor(52*ndecks*penet);
 
-  allbank = (float*)malloc(sizeof(float)*ntrials*nbets);
+  if(record_allbank) { 
+    allbank = (float*)malloc(sizeof(float)*ntrials*nbets);
+  }
+  testarray = (int*)malloc(sizeof(int)*21);
 
   
   startbank = bank;
@@ -73,20 +80,19 @@ int main(int argc, char* argv[]) {
   if(debug_trace) { printf("Writing stats...."); }
   write_stats(mystring);
   if(debug_trace) { printf(" done.\n"); }
- 
-  if(record_allbank) {
 
+  if(record_allbank) {
     sprintf(mystring,argv[1]);
     strcat(mystring,".allbank.dat");
     if(debug_trace) {
       printf("Writing allbank to %s ....", mystring);
     }    
     write_allbank(mystring, allbank, ntrials, nbets);
-    if(debug_trace) { printf(" done.\n"); }    
+    if(debug_trace) { printf(" done.\n"); }
+    free(allbank);    
   }
-
-  free(allbank);
-
+  free(testarray);    
+  return 0;
 }
 
 void play(int trialnum) {
@@ -99,6 +105,7 @@ void play(int trialnum) {
     handno = 0, nhands = 1;
     stbank = bank;
     stavebet = avebet;
+    //    printf("betno = %d; ", curbets);
     opendraw();
     flag = 0;
     while( flag == 0 ) {
@@ -141,10 +148,8 @@ void play(int trialnum) {
 	break;
       }
     }
-    printf("dcardno = %d\n", dcardno);
     resolvedeal();
-    printf("dcardno = %d\n", dcardno);    
-    allbank[nbets*trialnum+curbets-1] = bank;
+    //    allbank[nbets*trialnum+curbets-1] = bank;
     if((bank - stbank) > maxgain) { maxgain = bank - stbank; }
     if((bank - stbank) < mingain) { mingain = bank - stbank; }
     if(bank > maxmidbank) { maxmidbank = bank; }
@@ -153,7 +158,7 @@ void play(int trialnum) {
     if((avebet - stavebet) < minebet) { minebet = avebet - stavebet; }
 
     curbets++;
-    printhands();
+    //    printhands();
 
   }
 
@@ -165,11 +170,11 @@ void play(int trialnum) {
   siggain = siggain + (bank - startbank)*(bank - startbank);
   drawavegain = drawavegain + (bank - startbank)/(curbets-1);
   drawsiggain = drawsiggain + (bank - startbank)/(curbets-1)*(bank - startbank)/(curbets-1);
-  fsur = fsur + 1.0*nsur/(curbets-1);
-  fstd = fstd + 1.0*nstd/(curbets-1);
-  fhits = fhits + 1.0*nhits/(curbets-1);
-  fdbls = fdbls + 1.0*ndbls/(curbets-1);
-  fsplts = fsplts + 1.0*nsplts/(curbets-1);  
+  fsur = fsur + 1.0*nsur;///(curbets-1);
+  fstd = fstd + 1.0*nstd;///(curbets-1);
+  fhits = fhits + 1.0*nhits;///(curbets-1);
+  fdbls = fdbls + 1.0*ndbls;///(curbets-1);
+  fsplts = fsplts + 1.0*nsplts;///(curbets-1);  
   totalbets = totalbets + curbets - 1;
   
 }
@@ -287,11 +292,12 @@ void splitdeal() {
 }
 
 void hitdeal() {
-  if( cardpos >= maxcardpos ) {
+  if( cardpos >= maxcardpos-1 ) {
     shuffle(shoe, ndecks);
     cardpos = 0;
   }
   player[handno][cardno++] = shoe[cardpos++];
+
   updateptotal();
 }
 
@@ -320,11 +326,15 @@ void recomputeptotal() {
 
 void updateptotal() {
 
+  //  printf("ptotal %d, cardno = %d\n", ptotal[handno], cardno);
+  
   if (player[handno][cardno-1] == 1) {
     ptotal[handno] += 11; psoft = true; paces[handno]++;
   } else if (player[handno][cardno-1] > 10) {
     ptotal[handno] += 10;
-  } else { ptotal[handno] += player[handno][cardno-1]; }
+  } else {
+    ptotal[handno] += player[handno][cardno-1];
+  }
 
   if (ptotal[handno] > 21 ) {
     /*    for( int ll = 0; ll < cardno; ll++) {
@@ -337,6 +347,7 @@ void updateptotal() {
     }
     if (paces[handno] == 0) { psoft = false; }
   }
+
   
 }
 
@@ -460,11 +471,12 @@ int pdecision() {
 
 void cleartable() {
   // Clean up hands
-  for(int i = 0; i < 21; i++) {
+  int i, j, k;
+  for(i = 0; i < 21; i++) {
     dealer[i] = 0;
-    for(int j = 0; j < 8; j++) { player[j][i] = 0; }
+    for(j = 0; j < 8; j++) { player[j][i] = 0; }
   }
-  for(int k = 0; k < 8; k++) {
+  for(k = 0; k < 8; k++) {
     bets[k] = 0.0; ptotal[k] = 0; paces[k] = 0;
   }
   dtotal = 0; psoft = false; dsoft = false; daces = 0;
@@ -500,8 +512,8 @@ void read_params(char* fname) {
   get_int_param(fname, mystring, &nbets, debug_trace);
   sprintf(mystring,"penetration");  
   get_real_param(fname, mystring, &penet, debug_trace);
-  if (penet < 2.0) { penet = 10.0; }
-  if (penet > 100.0) { penet = 100.0; }  
+  if (penet < 0.1) { penet = 0.1; }
+  if (penet > 1.0) { penet = 1.0; }  
   sprintf(mystring,"bank");  
   get_real_param(fname, mystring, &bank, debug_trace);
   sprintf(mystring,"minbet");  
@@ -545,10 +557,11 @@ void shuffle( int* arr, int ndeck ) {
 
 void initialize_shoe(int* arr, int ndeck) {
 
+  int ii, jj, kk;
   // 1s are aces, J = 11, Q = 12, K = 13
-  for (int ii = 0; ii < ndeck; ii++) {
-    for (int jj = 0; jj < 4; jj++) {    
-      for (int kk = 0; kk < 13; kk++) {
+  for (ii = 0; ii < ndeck; ii++) {
+    for (jj = 0; jj < 4; jj++) {    
+      for (kk = 0; kk < 13; kk++) {
 	arr[ii*52+jj*13+kk] = kk+1;
       }
     }
