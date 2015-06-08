@@ -3,8 +3,10 @@
 #include <stdbool.h>
 #include <errno.h>
 #include <string.h>
-//#include <curand.h>
-//#include <curand_kernel.h>
+
+#include <curand.h>
+#include <curand_kernel.h>
+
 
 #include "main.h"
 #include "basic_strategy.h"
@@ -438,6 +440,7 @@ int pdecision() {
   */
 
   switch(strategy) {
+<<<<<<< HEAD
 
   case 999: // Another test strategy
     if ((cardno == 2) && (player[handno][0] == player[handno][1])) {
@@ -456,6 +459,13 @@ int pdecision() {
     return handaction_simple(player[handno], DOUBLE_Y, SPLIT_Y, SURRENDER_N);
     break;
 
+=======
+  case 1:
+    // Does basic action assuming that doubles are allowed, splits allowed, surrenders not allowed.
+    // This can be easily modified.
+    handaction_simple(player[handno], DOUBLE_Y, SPLIT_Y, SURRENDER_N);
+    break;
+>>>>>>> beba92adfee6036752ee8017515969c273d1c6e6
   case 0: // Test strategy, hit if ptotal < 17, else stand
   default: // Same as case 0
     if (ptotal[handno] < 17) {
