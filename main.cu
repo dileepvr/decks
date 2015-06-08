@@ -6,8 +6,9 @@
 //#include <curand.h>
 //#include <curand_kernel.h>
 
-
 #include "main.h"
+#include "basic_strategy.h"
+
 extern "C" {
 #include "fileio.h"
 }
@@ -25,7 +26,7 @@ float penet, bank, startbank, minbet, betspread;
 char mystring[64];
 int shoe[52*8], dealer[21], player[8][21];
 float bets[8];
-int ncards, maxcardpos, cardpos = 0;
+int cards, maxcardpos, cardpos = 0;
 int handno, cardno, nhands, ptotal[8], paces[8], dtotal, daces, dcardno;
 float *allbank;
 
@@ -437,6 +438,7 @@ int pdecision() {
   */
 
   switch(strategy) {
+
   case 999: // Another test strategy
     if ((cardno == 2) && (player[handno][0] == player[handno][1])) {
       return 4; // Split whenever possible
@@ -447,6 +449,13 @@ int pdecision() {
 	return 1;
       }
     }
+    
+  case 1:
+    // Does basic action assuming that doubles are allowed, splits allowed, surrenders not allowed.
+    // This can be easily modified.
+    return handaction_simple(player[handno], DOUBLE_Y, SPLIT_Y, SURRENDER_N);
+    break;
+
   case 0: // Test strategy, hit if ptotal < 17, else stand
   default: // Same as case 0
     if (ptotal[handno] < 17) {
