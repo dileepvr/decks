@@ -9,6 +9,7 @@
 
 
 #include "main.h"
+#include "basicstrategy.h"
 //extern "C" {
 #include "fileio.h"
 //}
@@ -458,6 +459,13 @@ int pdecision() {
 	return 1;
       }
     }
+
+  case 1:
+    // Does basic action assuming that doubles are allowed, splits allowed, surrenders not allowed.
+    // This can be easily modified to conform to the actual allowed plays for the given round.
+    return handaction_simple(player[handno], dealer[1], DOUBLE_Y, SPLIT_Y, SURRENDER_N);
+    break;
+
   case 0: // Test strategy, hit if ptotal < 17, else stand
   default: // Same as case 0
     if (ptotal[handno] < 17) {
