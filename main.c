@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <string.h>
 #include <math.h>
+#include <time.h>
 //#include <curand.h>
 //#include <curand_kernel.h>
 
@@ -182,7 +183,7 @@ void play(int trialnum) {
 void printhands() {
   int ll, temp;
 
-  printf("Dealer %d: ", dcardno);
+  printf("Dealer: ");
   for(ll = 0; ll < dcardno; ll++) {
     printf("%d ", dealer[ll]);
   }
