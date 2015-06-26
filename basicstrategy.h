@@ -1,8 +1,8 @@
 #ifndef BASICSTRATEGY_H
 #define BASICSTRATEGY_H
 
-#include <stdio.h>
-#include <math.h>
+//#include <stdio.h>
+//#include <math.h>
 
 // Tables copied from WizardOfOdds calculator until we make our own.
 
@@ -386,8 +386,9 @@ int simplify_action( int x, int allow_double, int allow_split, int allow_surrend
     // Total the hand, count the aces
     i=0;
     while( hand[i] != 0 ){
-      if( hand[i] == 11 ) { num_ace++; }
-      total += hand[i];
+      if( hand[i] == 1 ) { num_ace++; total += 11; }
+      else if ( hand[i] < 11 ) {total += hand[i]; }
+      else {total += 10; }
       i++;
     }
 

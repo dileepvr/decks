@@ -6,7 +6,7 @@
 debug_trace := true
 
 # 'ndecks' is integer for number of decks in the shoe (1 to 8)
-ndecks := 6
+ndecks := 1
 
 # 'penetration' is the float shoe penetration percentage (0.1 minimum)
 penetration := 1.0
@@ -32,7 +32,7 @@ houserules := 0
 # 0 - Test strategy (keep betting minbet)
 # 1 - Basic strategy (no counting)
 # 999 - split if possible, double if < 17, else stand (For testing)
-strategy := 0
+strategy := 1
 
 
 # 'nbets' is the integer that determines

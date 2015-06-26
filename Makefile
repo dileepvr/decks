@@ -28,10 +28,10 @@ $(EXECUTABLE): $(OBJFILES)
 	$(CC) $(CFLAGS) -o $(EXECUTABLE) $(LIBDIR)\
 	 $(OBJFILES) $(LIBRARIES)
 
-main.o: main.c
+main.o: main.c main.h basicstrategy.h fileio.h
 	$(CC) -c main.c
 
-fileio.o: fileio.c
+fileio.o: fileio.c fileio.h
 	$(CC) -c fileio.c
 
 clean:

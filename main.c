@@ -33,6 +33,8 @@ int ncards, maxcardpos, cardpos = 0;
 int handno, cardno, nhands, ptotal[8], paces[8], dtotal, daces, dcardno;
 float *allbank;
 
+int myflag = 0;
+
 // Variables for statistics
 float avegain = 0.0, siggain = 0.0, drawavegain = 0.0, drawsiggain = 0.0;
 float maxgain = 0.0, mingain = 0.0, maxbank = 0.0, minbank = 0.0;
@@ -112,6 +114,11 @@ void play(int trialnum) {
     flag = 0;
     while( flag == 0 ) {
       playeraction = verb(1);
+      /*      if (myflag == 0) { printf("%d ", playeraction); fflush(stdout); }
+      if ((playeraction < 0) && (myflag == 0)) {
+	printhands();
+	myflag = 1; 
+	}*/
       switch(playeraction) {
       case 0: // surrender
 	nsur++;
@@ -161,6 +168,7 @@ void play(int trialnum) {
 
     curbets++;
     //    printhands();
+    //    printf("trail no: %d. bet no. %d\n", trialnum, curbets);
 
   }
 
@@ -184,7 +192,7 @@ void play(int trialnum) {
 void printhands() {
   int ll, temp;
 
-  printf("Dealer: ");
+  printf("Dealer %d:", dcardno);
   for(ll = 0; ll < dcardno; ll++) {
     printf("%d ", dealer[ll]);
   }
