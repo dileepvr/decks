@@ -33,6 +33,11 @@ int ncards, maxcardpos, cardpos = 0;
 int handno, cardno, nhands, ptotal[8], paces[8], dtotal, daces, dcardno;
 float *allbank;
 
+// shoe_counts[:] are total counts of shoe so far
+// true_counts[:] are true counts (divided by num of decks left)
+// order: Hi-Lo, Hi-OptI, Hi-OptII, KO, OmegaII, Zen
+int shoe_counts[6];
+float true_counts[6];
 int myflag = 0;
 
 // Variables for statistics
@@ -167,7 +172,7 @@ void play(int trialnum) {
     if((avebet - stavebet) < minebet) { minebet = avebet - stavebet; }
 
     curbets++;
-    //    printhands();
+    //printhands();
     //    printf("trail no: %d. bet no. %d\n", trialnum, curbets);
 
   }
@@ -192,7 +197,8 @@ void play(int trialnum) {
 void printhands() {
   int ll, temp;
 
-  printf("Dealer %d:", dcardno);
+  //  printf("Dealer %d:", dcardno);
+  printf("Dealer: ");
   for(ll = 0; ll < dcardno; ll++) {
     printf("%d ", dealer[ll]);
   }
@@ -223,6 +229,7 @@ void resolvedeal() {
   // Surrender not being accounted for right now
   bool allbusted = true;
   dcardno = 2;
+  update_shoe_counts(dealer[0]);          
   // Check player busts and finish dealer card draws
   for(handno = 0; handno < nhands; handno++) {
     recomputeptotal();
@@ -252,6 +259,7 @@ void resolvedeal() {
 	cardpos = 0;
       }
       dealer[dcardno++] = shoe[cardpos++];
+      update_shoe_counts(dealer[dcardno-1]);        
       updatedtotal();
     }
 
@@ -285,6 +293,8 @@ void splitdeal() {
   player[handno][0] = player[handno-1][1];
   player[handno-1][1] = shoe[cardpos++];
   player[handno][1] = shoe[cardpos++];
+  update_shoe_counts(player[handno-1][1]);
+  update_shoe_counts(player[handno][1]);    
   cardno = 2;
 
   if (player[handno][0] == 1) {
@@ -307,6 +317,7 @@ void hitdeal() {
     cardpos = 0;
   }
   player[handno][cardno++] = shoe[cardpos++];
+  update_shoe_counts(player[handno][cardno-1]);  
 
   updateptotal();
 }
@@ -399,6 +410,9 @@ void opendraw() {
   player[handno][0] = shoe[cardpos++];
   player[handno][1] = shoe[cardpos++];
   cardno = 2;
+  update_shoe_counts(dealer[1]);
+  update_shoe_counts(player[handno][0]);
+  update_shoe_counts(player[handno][1]);
 
   if (dealer[1] == 1) {
     dtotal = 11; dsoft = true; daces++;
@@ -557,6 +571,14 @@ void shuffle( int* arr, int ndeck ) {
   int ii, jj, kk;
   //  srand ( time(NULL) );
 
+  
+  //  print_shoe_counts();
+  for (ii = 0; ii < 6; ii++) {
+    shoe_counts[ii] = 0;
+    true_counts[ii] = 0.0;
+  }
+
+  
   // Shuffle thrice, just 'cause
   for (kk = 0; kk < 3; kk++) {
     // Start from the last element and swap one by one. We don't
@@ -570,11 +592,13 @@ void shuffle( int* arr, int ndeck ) {
       swap(&arr[ii], &arr[jj]);
     }
   }
+  
 }
 
 void initialize_shoe(int* arr, int ndeck) {
 
   int ii, jj, kk;
+
   // 1s are aces, J = 11, Q = 12, K = 13
   for (ii = 0; ii < ndeck; ii++) {
     for (jj = 0; jj < 4; jj++) {    
@@ -664,4 +688,89 @@ void write_stats(char* p_file) {
   fprintf(fp, "Average number of splits = \t%f\n", fsplts);
   
   fclose(fp);
+}
+
+void update_shoe_counts(int card) {
+
+  int ii, ndecks_left;
+  switch(card) {
+
+  case 1:
+    shoe_counts[0]--;
+    shoe_counts[3]--;
+    shoe_counts[5]--;
+    break;
+  case 2:
+    shoe_counts[0]++;
+    shoe_counts[2]++;
+    shoe_counts[3]++;
+    shoe_counts[4]++;
+    shoe_counts[5]++;
+    break;
+  case 3:
+    shoe_counts[0]++;
+    shoe_counts[1]++;    
+    shoe_counts[2]++;
+    shoe_counts[3]++;
+    shoe_counts[4]++;
+    shoe_counts[5]++;
+    break;
+  case 4:
+  case 5:
+    shoe_counts[0]++;
+    shoe_counts[1]++;    
+    shoe_counts[2]+=2;
+    shoe_counts[3]++;
+    shoe_counts[4]+=2;
+    shoe_counts[5]+=2;    
+    break;
+  case 6:
+    shoe_counts[0]++;
+    shoe_counts[1]++;    
+    shoe_counts[2]++;
+    shoe_counts[3]++;
+    shoe_counts[4]+=2;
+    shoe_counts[5]+=2;    
+    break;
+  case 7:
+    shoe_counts[2]++;
+    shoe_counts[3]++;
+    shoe_counts[4]++;
+    shoe_counts[5]++;    
+    break;
+  case 9:
+    shoe_counts[4]--;
+    break;
+  case 10:
+  case 11:
+  case 12:
+  case 13:
+    shoe_counts[0]--;
+    shoe_counts[1]--;    
+    shoe_counts[2]-=2;
+    shoe_counts[3]--;
+    shoe_counts[4]-=2;
+    shoe_counts[5]-=2;
+    break;
+
+  }
+  ndecks_left = ceil(1.0*(maxcardpos - cardpos)/52.0);
+  for (ii = 0; ii < 6; ii++) {
+    true_counts[ii] = shoe_counts[ii]*1.0/ndecks_left;
+  }
+
+  
+}
+
+void print_shoe_counts() {
+
+// order: Hi-Lo, Hi-OptI, Hi-OptII, KO, OmegaII, Zen
+  printf("Count type\t Shoe count\t True count\n");
+  printf("Hi-Lo\t %d\t %f\n", shoe_counts[0], true_counts[0]);
+  printf("Hi-Opt I\t %d\t %f\n", shoe_counts[1], true_counts[1]);
+  printf("Hi-Opt II\t %d\t %f\n", shoe_counts[2], true_counts[2]);
+  printf("KO\t %d\t %f\n", shoe_counts[3], true_counts[3]);
+  printf("Omega II\t %d\t %f\n", shoe_counts[4], true_counts[4]);
+  printf("Zen\t %d\t %f\n", shoe_counts[5], true_counts[5]);  
+
 }
