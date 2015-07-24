@@ -22,7 +22,7 @@ minbet := 5.0
 betspread := 10.0
 
 # 'ntrials' is the integer number of trials
-ntrials := 1000
+ntrials := 1
 
 # 'houserules' is the integer house rule set
 # Currently not used
@@ -40,7 +40,7 @@ strategy := 1
 # 0 - End trial when bank <= 0
 # N - (N > 0) End trial after N bets or when bank <= 0
 # M - (M < 0) End trial after |M| bets regardless of bank
-nbets := 1000
+nbets := 10
 
 
 # 'record_allbank' (true or false) determines whether or not

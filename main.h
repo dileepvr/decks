@@ -19,3 +19,5 @@ void shuffle(int*, int);
 void initialize_shoe(int*, int);
 void compute_stats();
 void write_stats(char*);
+void update_shoe_counts(int);
+void print_shoe_counts();
