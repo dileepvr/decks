@@ -368,28 +368,61 @@ int simplify_action( int x, int allow_double, int allow_split, int allow_surrend
   // Okay, define the basic strategy lookup function.
   // You give it a hand, number of cards, and the
   // dealercard, and it tells you the best move.
-  int handaction(int * hand,
-		 int dealercard)
+  int handaction(int * hand_in,
+		 int dealercard_in
+		 //		 int num_ace,
+		 //		 int total,
+		 //		 int hard,
+		 )
+
   {
+    int hand[21];
     int num_ace=0;
+    int num_cards=0;
     int total=0;
-    int hard=0;
-    int action=0;
+    int dealercard=0;
+    //    int hard=0;
+    //    int action=0;
     int i;
 
-    // If only 2 cards and they match, return pair offset. Done.
-    if( hand[2] == 0 && hand[0] == hand[1]){
-      //printf( "PAIR|%d|%d|", hand[0]+OFFSET_PAIR, dealercard+OFFSET_DEALER );
-      return H17_0[hand[0]+OFFSET_PAIR][dealercard+OFFSET_DEALER];
+    if( dealercard_in > 10 ){
+      dealercard = 10;
+    } else if( dealercard_in == 1 ) {
+      dealercard = 11;
+    } else {
+      dealercard = dealercard_in;
     }
 
-    // Total the hand, count the aces
+    // Count cards in hand, convert hand type
     i=0;
-    while( hand[i] != 0 ){
-      if( hand[i] == 1 ) { num_ace++; total += 11; }
-      else if ( hand[i] < 11 ) {total += hand[i]; }
-      else {total += 10; }
-      i++;
+    while( hand_in[i] != 0 ){
+      num_cards++;
+      if( hand_in[i] > 10 ){
+	hand[i] = 10;
+      } else if( hand_in[i] == 1 ) {
+	hand[i] = 11;
+      } else {
+	hand[i] = hand_in[i];
+      }
+      i++;    
+    }
+
+    // If only 2 cards and they match, return pair offset. Done.
+        if( hand_in[2] == 0 && hand[0] == hand[1] ){
+	  //	  printf( "FAKEPAIR|%d|%d|%d|", hand[0], hand[1], hand[2] );
+          return H17_0[hand[0]+OFFSET_PAIR][dealercard+OFFSET_DEALER];
+        }
+
+
+    //    if( ( hand[2] == 0 ) && ( hand[0] == hand[1] ) ){
+      //printf( "PAIR|%d|%d|", hand[0]+OFFSET_PAIR, dealercard+OFFSET_DEALER );
+    //      return H17_0[hand[0]+OFFSET_PAIR][dealercard+OFFSET_DEALER];
+    //    }
+
+    // Total the hand, count the aces
+    for( i=0; i<num_cards; i++){    
+      if( hand[i] == 11 ) { num_ace++; }
+      total += hand[i];
     }
 
     // If we're over 21 with an ace, count ace 1 point until under 21 (or until we run out of aces)
@@ -401,6 +434,18 @@ int simplify_action( int x, int allow_double, int allow_split, int allow_surrend
 	break;
       }
     }
+
+
+
+    // If we're over 21 with an ace, count ace 1 point until under 21 (or until we run out of aces)
+    //    while( num_ace > 0 ){
+    //      if( total>21 ){
+    // total -= 10;
+    //	num_ace--;
+    //      } else {
+    //	break;
+    //      }
+    //    }
 
     // If index is out of bounds, fix it. We shouldn't be allowed to do anything on a bust anyway (right?!).
     if( total > 21 ){

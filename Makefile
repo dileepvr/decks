@@ -39,3 +39,4 @@ clean:
 
 check:
 	 ./$(EXECUTABLE) param.template
+	 ./$(EXECUTABLE) param.zero
