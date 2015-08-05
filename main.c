@@ -47,7 +47,7 @@ float maxmidbank = 0.0, minmidbank = 0.0;
 float avebet = 0.0, sigbet = 0.0, maxbet = 0.0, minebet = 0.0;
 int nwinhands = 0, ndbusts = 0, npbusts = 0;
 float fwinhands = 0.0, fdbusts = 0.0, fpbusts = 0.0;
-int nsur = 0, nstd = 0, nhits = 0, ndbls = 0, nsplts = 0;
+int nsur = 0, nstd = 0, nhits = 0, ndbls = 0, nsplts = 0, nbjs = 0, npush = 0;
 int nbankrupt = 0, totalbets = 0;
 float fsur = 0.0, fstd = 0.0, fhits = 0.0, fdbls = 0.0, fsplts = 0.0;
 
@@ -74,6 +74,8 @@ int main(int argc, char* argv[]) {
 
   
   startbank = bank;
+  minbank = bank;
+
   if(debug_trace) { printf("Playing trials...."); }
   for(i = 0; i < ntrials; i++) {
     play(i);
@@ -108,7 +110,7 @@ void play(int trialnum) {
   int curbets = 1, playeraction, flag = 0;
   float stbank, stavebet;
   bank = startbank;
-  nsur = 0; nstd = 0; ndbusts = 0; nhits = 0; ndbls = 0; nsplts = 0;  
+  nsur = 0; nstd = 0; nhits = 0; ndbls = 0; nsplts = 0;  
   while ( !trialover(curbets) ) {
     //    curbets++;
     handno = 0, nhands = 1;
@@ -172,7 +174,7 @@ void play(int trialnum) {
     if((avebet - stavebet) < minebet) { minebet = avebet - stavebet; }
 
     curbets++;
-    //printhands();
+    //    printhands();
     //    printf("trail no: %d. bet no. %d\n", trialnum, curbets);
 
   }
@@ -197,7 +199,8 @@ void play(int trialnum) {
 void printhands() {
   int ll, temp;
 
-  //  printf("Dealer %d:", dcardno);
+  printf("Bank: %f \n", bank);
+
   printf("Dealer: ");
   for(ll = 0; ll < dcardno; ll++) {
     printf("%d ", dealer[ll]);
@@ -264,15 +267,24 @@ void resolvedeal() {
     }
 
     for(handno = 0; handno < nhands; handno++) {
-      if((ptotal[handno] <= 21) && ((ptotal[handno] > dtotal) || (dtotal > 21))) {
+
+      // Check for Blackjack
+      // Modify this according to 'houserules' parameter
+      if((ptotal[handno] == 21) && (player[handno][2] == 0) && ((dtotal != 21) || (dealer[2] != 0) )) {
 	nwinhands++;
-	// Check for Blackjack
-	// Modify this according to 'houserules' parameter
-	if((ptotal[handno] == 21) && (player[handno][2] == 0)) {
-	  bank += 2.5*bets[handno];
-	} else {
+	nbjs++;
+	bank += 2.5*bets[handno];
+      } else if (ptotal[handno] == dtotal) {
+	  npush++;
+	  bank += bets[handno];
+      } else {
+
+	if((ptotal[handno] <= 21) && ((ptotal[handno] > dtotal) || (dtotal > 21))) {
+	  nwinhands++;
 	  bank += 2*bets[handno];
+	  if(dtotal > 21) { ndbusts++; } 
 	}
+
       }
 
     }
@@ -633,6 +645,8 @@ void compute_stats() {
   fhits = fhits*invntrials;
   fdbls = fdbls*invntrials;
   fsplts = fsplts*invntrials;
+  nbjs = nbjs*invntrials;
+  npush = npush*invntrials;
   
 }
 
@@ -686,6 +700,8 @@ void write_stats(char* p_file) {
   fprintf(fp, "Average number of hits = \t%f\n", fhits);
   fprintf(fp, "Average number of doubles = \t%f\n", fdbls);
   fprintf(fp, "Average number of splits = \t%f\n", fsplts);
+  fprintf(fp, "Average number of player blackjacks = \t%d\n", nbjs);
+  fprintf(fp, "Average number of player pushes = \t%d\n", npush);
   
   fclose(fp);
 }

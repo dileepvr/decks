@@ -309,60 +309,83 @@ const int S17_2[N_PLAYER_HANDS][N_DEALER_HANDS] =
 
 int simplify_action( int x, int allow_double, int allow_split, int allow_surrender )
 {
+
+  //  printf( "BOOM: %d", x );
+
+
   if( x < 5 ){
     return x; // Already been simplified, probably
   }
 
-  if( x == DH && allow_double ){
-    return D;
-  } else {
-    return H;
+  switch(x){
+
+  case DH:
+    if( allow_double ){
+      return D;
+    } else {
+      return H;
+    }
+    break;
+
+  case DS:
+    if( allow_double ){
+      return D;
+    } else {
+      return S;
+    }
+    break;
+
+  case QH:
+    if( allow_split ){
+      return P;
+    } else {
+      return H;
+    }
+    break;
+
+  case QS:
+    if( allow_split ){
+      return P;
+    } else {
+      return S;
+    }
+    break;
+
+  case QD:
+    if( allow_split ){
+      return P;
+    } else {
+      return D;
+    }
+    break;
+
+  case RH:
+    if( allow_surrender ){
+      return R;
+    } else {
+      return H;
+    }
+    break;
+
+  case RS:
+    if( allow_surrender ){
+      return R;
+    } else {
+      return S;
+    }
+    break;
+
+  case RP:
+    if( allow_surrender ){
+      return R;
+    } else {
+      return P;
+    }
+    break;
+     
+  default:
+    return 99; // error! table must be malformed
   }
-
-  if( x == DS && allow_double ){
-    return D;
-  } else {
-    return S;
-  }
-
-  if( x == QH && allow_split ){
-    return P;
-  } else {
-    return H;
-  }
-
-  if( x == QS && allow_split ){
-    return P;
-  } else {
-    return S;
-  }
-
-  if( x == QD && allow_split ){
-    return P;
-  } else {
-    return D;
-  }
-
-  if( x == RH && allow_surrender ){
-    return R;
-  } else {
-    return H;
-  }
-
-  if( x == RS && allow_surrender ){
-    return R;
-  } else {
-    return S;
-  }
-
-  if( x == RP && allow_surrender ){
-    return R;
-  } else {
-    return P;
-  }
-
-  return 99; // error! table must be malformed
-
 }
 
   // Okay, define the basic strategy lookup function.
@@ -376,7 +399,7 @@ int simplify_action( int x, int allow_double, int allow_split, int allow_surrend
 		 )
 
   {
-    int hand[21];
+    int hand[21] = {0,0,0,0,0,0,0,0,0,0,0,0};
     int num_ace=0;
     int num_cards=0;
     int total=0;
@@ -393,6 +416,8 @@ int simplify_action( int x, int allow_double, int allow_split, int allow_surrend
       dealercard = dealercard_in;
     }
 
+
+
     // Count cards in hand, convert hand type
     i=0;
     while( hand_in[i] != 0 ){
@@ -406,6 +431,9 @@ int simplify_action( int x, int allow_double, int allow_split, int allow_surrend
       }
       i++;    
     }
+
+    //    printf( "FAKEPAIR|%d|%d|%d|-|%d|", hand[0], hand[1], hand[2], dealercard );
+
 
     // If only 2 cards and they match, return pair offset. Done.
         if( hand_in[2] == 0 && hand[0] == hand[1] ){
@@ -454,7 +482,12 @@ int simplify_action( int x, int allow_double, int allow_split, int allow_surrend
 
     // If no aces acting as 11 points, we have a hard hand, otherwise it's a soft hand
     if( num_ace == 0 ){
-      //printf( "HARD|%d|%d|", total+OFFSET_HARD, dealercard+OFFSET_DEALER );
+      //      printf( "HARD|%d|%d|", total, dealercard );
+      //      printf( "HARD|%d|%d|", total+OFFSET_HARD, dealercard+OFFSET_DEALER );
+      
+
+      //      printf( "THIS|%d|", H17_0[total+OFFSET_HARD][dealercard+OFFSET_DEALER] );
+
       return H17_0[total+OFFSET_HARD][dealercard+OFFSET_DEALER];
     } else {
       //printf( "SOFT|%d|%d|", total+OFFSET_SOFT, dealercard+OFFSET_DEALER );
