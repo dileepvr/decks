@@ -507,6 +507,9 @@ int pdecision() {
      3 == double
      4 == split
   */
+    int allow_doubles=0;
+    int allow_splits=0;
+
 
   switch(strategy) {
   case 999: // Another test strategy
@@ -523,7 +526,31 @@ int pdecision() {
   case 1:
     // Does basic action assuming that doubles are allowed, splits allowed, surrenders not allowed.
     // This can be easily modified to conform to the actual allowed plays for the given round.
-    return handaction_simple(player[handno], dealer[1], DOUBLE_Y, SPLIT_Y, SURRENDER_N);
+
+
+    // allow double/splits if only 2 cards in hand
+    if ( player[handno][2] == 0 ) {
+      allow_doubles = DOUBLE_Y;
+      allow_splits = SPLIT_Y;
+    }
+
+    // but dissallow doubles if on a split hand with an ace
+    if ( handno > 0 ) {
+      if ( player[handno][0] == 1 ){
+	allow_doubles = DOUBLE_N;
+      }
+    }
+
+    // and don't allow splits if already have split 3 times
+    if ( handno > 3 ) {
+      allow_splits = SPLIT_N;
+    }
+
+    return handaction_simple(player[handno],
+			     dealer[1],
+			     allow_doubles,
+			     allow_splits,
+			     SURRENDER_N);
     break;
 
   case 0: // Test strategy, hit if ptotal < 17, else stand
