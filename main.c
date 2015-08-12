@@ -76,6 +76,7 @@ int main(int argc, char* argv[]) {
   startbank = bank;
   minbank = bank;
 
+  
   if(debug_trace) { printf("Playing trials...."); }
   for(i = 0; i < ntrials; i++) {
     play(i);
@@ -159,6 +160,12 @@ void play(int trialnum) {
       case 4: // split
 	nsplts++;
 	splitdeal(); // Not checking if split command is valid
+	// Check if Aces were split, and change flag if so
+	if((player[handno][0] == 1) && (player[handno-1][0] == 1)) {
+	  handno = handno - 2;
+	  if (handno < 0) { flag = 5; }
+	  else { recomputeptotal(); }
+	}
 	break;
       default: // do nothing
 	break;
@@ -174,7 +181,7 @@ void play(int trialnum) {
     if((avebet - stavebet) < minebet) { minebet = avebet - stavebet; }
 
     curbets++;
-    //    printhands();
+    printhands();
     //    printf("trail no: %d. bet no. %d\n", trialnum, curbets);
 
   }
@@ -293,11 +300,27 @@ void resolvedeal() {
 }
 
 void splitdeal() {
+  int tempno, isp;
   nhands++;
   if( cardpos >= maxcardpos - 2 ) {
     shuffle(shoe, ndecks);
     cardpos = 0;
   }
+
+  // If previous split has occupied next array position
+  // shift one over
+  if( bets[handno+1] > 0 ) {
+    for( tempno = 7; tempno > handno+1; tempno-- ){
+      bets[tempno] = bets[tempno-1];
+      for( isp = 0; isp < 21; isp++ ){
+	player[tempno][isp] = player[tempno-1][isp];
+      }
+    }
+    for( isp = 0; isp < 21; isp++ ){
+      player[handno+1][isp] = 0;
+    }
+  }
+  
   bank -= bets[handno++];
   bets[handno] = bets[handno-1];
   avebet = avebet + bets[handno];
