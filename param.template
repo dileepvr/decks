@@ -4,6 +4,7 @@
 
 # 'debug_trace' (true or false) is a boolean print-out flag
 debug_trace := false
+debug_printhands := false
 
 # 'ndecks' is integer for number of decks in the shoe (1 to 8)
 ndecks := 1
@@ -22,7 +23,7 @@ minbet := 5.0
 betspread := 10.0
 
 # 'ntrials' is the integer number of trials
-ntrials := 1
+ntrials := 1000
 
 # 'houserules' is the integer house rule set
 # Currently not used
@@ -40,7 +41,7 @@ strategy := 1
 # 0 - End trial when bank <= 0
 # N - (N > 0) End trial after N bets or when bank <= 0
 # M - (M < 0) End trial after |M| bets regardless of bank
-nbets := 1
+nbets := 1000
 
 
 

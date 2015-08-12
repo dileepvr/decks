@@ -21,7 +21,7 @@ __global__ void mykernel() {
 }
 */
 
-bool debug_trace = true, psoft = false, dsoft = false;
+bool debug_trace = true, debug_printhands = false, psoft = false, dsoft = false;
 bool record_allbank = false;
 int ndecks, ntrials, houserules, strategy, nbets;
 float penet, bank, startbank, minbet, betspread;
@@ -181,7 +181,9 @@ void play(int trialnum) {
     if((avebet - stavebet) < minebet) { minebet = avebet - stavebet; }
 
     curbets++;
-    printhands();
+
+    if( debug_printhands ) { printhands(); }
+
     //    printf("trail no: %d. bet no. %d\n", trialnum, curbets);
 
   }
@@ -564,6 +566,10 @@ void read_params(char* fname) {
 
   sprintf(mystring,"debug_trace");
   get_bool_param(fname, mystring, &debug_trace, true);
+
+  sprintf(mystring,"debug_printhands");
+  get_bool_param(fname, mystring, &debug_printhands, debug_trace);
+
   sprintf(mystring,"ndecks");
   get_int_param(fname, mystring, &ndecks, debug_trace);
   if (ndecks < 1) { ndecks = 1; }
