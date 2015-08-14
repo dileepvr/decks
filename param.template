@@ -7,7 +7,7 @@ debug_trace := false
 debug_printhands := false
 
 # 'ndecks' is integer for number of decks in the shoe (1 to 8)
-ndecks := 1
+ndecks := 6
 
 # 'penetration' is the float shoe penetration percentage (0.1 minimum)
 penetration := 1.0

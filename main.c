@@ -282,7 +282,14 @@ void resolvedeal() {
       if((ptotal[handno] == 21) && (player[handno][2] == 0) && ((dtotal != 21) || (dealer[2] != 0) )) {
 	nwinhands++;
 	nbjs++;
-	bank += 2.5*bets[handno];
+	  
+	if( handno == 0 && nhands == 1  ) {
+	  bank += 2.5*bets[handno];
+	} else {
+	  bank += 2*bets[handno];
+	}
+	
+	  
       } else if (ptotal[handno] == dtotal) {
 	  npush++;
 	  bank += bets[handno];
