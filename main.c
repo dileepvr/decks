@@ -39,7 +39,6 @@ float *allbank;
 int shoe_counts[6];
 float true_counts[6];
 int myflag = 0;
-
 // Variables for statistics
 float avegain = 0.0, siggain = 0.0, drawavegain = 0.0, drawsiggain = 0.0;
 float maxgain = 0.0, mingain = 0.0, maxbank = 0.0, minbank = 0.0;
@@ -75,6 +74,7 @@ int main(int argc, char* argv[]) {
   
   startbank = bank;
   minbank = bank;
+  minebet = bank;
 
   
   if(debug_trace) { printf("Playing trials...."); }
@@ -498,9 +498,41 @@ int verb(int state) {
 }
 
 int openbet() {
+
+  int try;
+  float k_p, k_b, k_q;
+
   switch(strategy) {
+
   case 0: // Test strategy
     return minbet;
+
+  case 1:
+    
+    //    return minbet;
+    /*
+    k_b = 2;
+    k_p = true_counts[0]/100.0+0.5;
+    k_q = 1-k_p;
+
+    try = (k_b*k_p - k_q)/k_b * 1000;
+      if( try > minbet * betspread ){
+	try = minbet * betspread;
+      } else if ( try < minbet ){
+	try = minbet;
+      }
+    return try;
+    */
+
+
+
+    if( true_counts[0] > 3 ) {
+      return minbet * betspread;
+    } else {
+      return minbet;
+    }
+
+
   default: // Same as case 0
     return minbet;
   }

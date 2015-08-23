@@ -10,17 +10,17 @@ debug_printhands := false
 ndecks := 6
 
 # 'penetration' is the float shoe penetration percentage (0.1 minimum)
-penetration := 1.0
+penetration := 0.8
 
 # 'bank' is the float starting bank size
 bank := 1000.0
 
 # 'minbet' is the float minimum bet
-minbet := 5.0
+minbet := 10.0
 
 # 'betspread' is the float ratio of maxbet/minbet
 # If maxbet > bank, entire bank might be bet
-betspread := 10.0
+betspread := 20.0
 
 # 'ntrials' is the integer number of trials
 ntrials := 10000
