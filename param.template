@@ -16,7 +16,7 @@ penetration := 0.8
 bank := 500.0
 
 # 'minbet' is the float minimum bet
-minbet := 5.0
+minbet := 10.0
 
 # 'betspread' is the float ratio of maxbet/minbet
 # If maxbet > bank, entire bank might be bet
