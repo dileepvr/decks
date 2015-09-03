@@ -13,14 +13,14 @@ ndecks := 6
 penetration := 0.8
 
 # 'bank' is the float starting bank size
-bank := 1000.0
+bank := 500.0
 
 # 'minbet' is the float minimum bet
-minbet := 10.0
+minbet := 5.0
 
 # 'betspread' is the float ratio of maxbet/minbet
 # If maxbet > bank, entire bank might be bet
-betspread := 20.0
+betspread := 10.0
 
 # 'ntrials' is the integer number of trials
 ntrials := 10000

@@ -118,6 +118,21 @@ void play(int trialnum) {
     stbank = bank;
     stavebet = avebet;
     //    printf("betno = %d; ", curbets);
+
+    // ADD IN SITTING OUT HANDS (really, running away)
+    if( true_counts[0] < 3 ) {
+      while( true_counts[0] < 0 ) {
+	int jayjay;
+	for( jayjay=0; jayjay<10; jayjay++){
+	  update_shoe_counts(shoe[cardpos++]);
+	  if( cardpos >= maxcardpos ) {
+	    shuffle(shoe, ndecks);
+	    cardpos = 0;
+	  }
+	}
+      }
+    }
+
     opendraw();
     flag = 0;
     while( flag == 0 ) {
@@ -341,6 +356,8 @@ void splitdeal() {
   update_shoe_counts(player[handno][1]);    
   cardno = 2;
 
+
+
   if (player[handno][0] == 1) {
     ptotal[handno] = 11; psoft = true; paces[handno]++;
   } else if (player[handno][0] > 10) {
@@ -525,9 +542,17 @@ int openbet() {
     */
 
 
+    if( true_counts[0] > 2 ) {
 
-    if( true_counts[0] > 3 ) {
-      return minbet * betspread;
+      //      try = (bank*0.005) * round( true_counts[0] );
+      try = minbet * round( true_counts[0] );
+
+      if ( try > minbet * betspread ){
+	return  minbet * betspread;
+      } else {
+	return try;
+      }
+
     } else {
       return minbet;
     }
