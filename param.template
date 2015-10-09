@@ -4,7 +4,7 @@
 
 # 'debug_trace' (true or false) is a boolean print-out flag
 debug_trace := false
-debug_printhands := false
+debug_printhands := true
 
 # 'ndecks' is integer for number of decks in the shoe (1 to 8)
 ndecks := 6
@@ -23,11 +23,26 @@ minbet := 10.0
 betspread := 10.0
 
 # 'ntrials' is the integer number of trials
-ntrials := 10000
+ntrials := 1
 
 # 'houserules' is the integer house rule set
 # Currently not used
+# Specify all rules individually instead
+# 'dhitssoft17'     - Whether dealer hits soft 17
+# 'dblaftsplit'     - Double after split
+# 'resplitaces'     - Resplit aces
+# 'hitsplitaces'    - Can hit split aces
+# 'surrndr'         - Surrender allowed
+# 'bj3to2'          - Blacjack pays 3 to 2 (and not 6 to 5)
+# 'resplithandsmax' - Number of hands player can resplit to
 houserules := 0
+dhitssoft17 := false
+dblaftsplit := true
+resplitaces := false
+hitsplitaces := false
+surrndr := false
+bj3to2 := true
+resplithandsmax := 4
 
 # 'strategy' is the integer strategy to test
 # 0 - Test strategy (keep betting minbet)
@@ -41,7 +56,7 @@ strategy := 1
 # 0 - End trial when bank <= 0
 # N - (N > 0) End trial after N bets or when bank <= 0
 # M - (M < 0) End trial after |M| bets regardless of bank
-nbets := 1000
+nbets := 1
 
 
 

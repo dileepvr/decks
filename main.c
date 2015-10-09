@@ -24,6 +24,9 @@ __global__ void mykernel() {
 bool debug_trace = true, debug_printhands = false, psoft = false, dsoft = false;
 bool record_allbank = false;
 int ndecks, ntrials, houserules, strategy, nbets;
+bool dhitssoft17 = false, dblaftsplit = true, resplitaces = false;
+bool hitsplitaces = false, surrndr = false, bj3to2 = true;
+int resplithandsmax = 4;
 float penet, bank, startbank, minbet, betspread;
 char mystring[64];
 int shoe[416], player[8][21];
@@ -62,6 +65,7 @@ int main(int argc, char* argv[]) {
   minebet = minbet;
   initialize_shoe(shoe, ndecks);
   shuffle(shoe, ndecks);
+
 
   ncards = 52*8;
   maxcardpos = floor(52*ndecks*penet);
@@ -119,6 +123,7 @@ void play(int trialnum) {
     stavebet = avebet;
     //    printf("betno = %d; ", curbets);
 
+    /*
     // ADD IN SITTING OUT HANDS (really, running away)
     if( true_counts[0] < 3 ) {
       while( true_counts[0] < 0 ) {
@@ -132,7 +137,8 @@ void play(int trialnum) {
 	}
       }
     }
-
+    */
+    
     opendraw();
     flag = 0;
     while( flag == 0 ) {
@@ -176,7 +182,7 @@ void play(int trialnum) {
 	nsplts++;
 	splitdeal(); // Not checking if split command is valid
 	// Check if Aces were split, and change flag if so
-	if((player[handno][0] == 1) && (player[handno-1][0] == 1)) {
+	if((player[handno][0] == 1) && (player[handno-1][0] == 1) && (!hitsplitaces)) {
 	  handno = handno - 2;
 	  if (handno < 0) { flag = 5; }
 	  else { recomputeptotal(); }
@@ -279,8 +285,8 @@ void resolvedeal() {
       if(dtotal > 21) { ndbusts++; } 
     }
 
-    // Modify soft-17 rule based on 'houserules' parameter
-    while((dtotal < 17) || ((dtotal == 17) && (daces > 0))) {
+    // Soft-17 rule based on 'dhitssoft17' parameter
+    while((dtotal < 17) || ((dtotal == 17) && (daces > 0) && dhitssoft17)) {
       if( cardpos >= maxcardpos ) {
 	shuffle(shoe, ndecks);
 	cardpos = 0;
@@ -299,7 +305,11 @@ void resolvedeal() {
 	nbjs++;
 	  
 	if( handno == 0 && nhands == 1  ) {
-	  bank += 2.5*bets[handno];
+	  if (bj3to2) {
+	    bank += 2.5*bets[handno]; // 3 to 2 payout
+	  } else {
+	    bank +=2.2*bets[handno];  // 6 to 5 payout
+	  }
 	} else {
 	  bank += 2*bets[handno];
 	}
@@ -573,11 +583,42 @@ int pdecision() {
   */
     int allow_doubles=0;
     int allow_splits=0;
+    int allow_surrender=0;
 
+    // Establish contextual house rules for use in strategies
+    if(surrndr) { allow_surrender = SURRENDER_Y; }
+
+    // allow double/splits if only 2 cards in hand
+    if ( player[handno][2] == 0 ) {
+      allow_doubles = DOUBLE_Y;
+      if ((nhands > 1) && (!dblaftsplit)) {
+	allow_doubles = DOUBLE_N;
+      }
+      allow_splits = SPLIT_Y;
+      // Check if resplitting aces is allowed
+      if ((player[handno][0] == 1) && (player[handno][1] == 1)) {
+	if ((nhands > 1) && (!resplitaces)) {
+	  allow_splits = SPLIT_N;
+	}
+      }
+    }
+    
+    // but dissallow doubles if on a split hand with an ace
+    if ( nhands > 1 ) {
+      if ( player[handno][0] == 1 ){
+	allow_doubles = DOUBLE_N;
+      }
+    }
+
+    // and don't allow splits if already have resplithandsmax hands
+    if ( nhands > resplithandsmax - 1 ) {
+      allow_splits = SPLIT_N;
+    }
+    
 
   switch(strategy) {
   case 999: // Another test strategy
-    if ((cardno == 2) && (player[handno][0] == player[handno][1])) {
+    if ((cardno == 2) && (player[handno][0] == player[handno][1]) && (allow_splits)) {
       return 4; // Split whenever possible
     } else { // Else double if ptotal < 17, else stand
       if (ptotal[handno] < 17) {
@@ -588,33 +629,13 @@ int pdecision() {
     }
 
   case 1:
-    // Does basic action assuming that doubles are allowed, splits allowed, surrenders not allowed.
-    // This can be easily modified to conform to the actual allowed plays for the given round.
-
-
-    // allow double/splits if only 2 cards in hand
-    if ( player[handno][2] == 0 ) {
-      allow_doubles = DOUBLE_Y;
-      allow_splits = SPLIT_Y;
-    }
-
-    // but dissallow doubles if on a split hand with an ace
-    if ( handno > 0 ) {
-      if ( player[handno][0] == 1 ){
-	allow_doubles = DOUBLE_N;
-      }
-    }
-
-    // and don't allow splits if already have split 3 times
-    if ( handno > 3 ) {
-      allow_splits = SPLIT_N;
-    }
+    // Does basic action using house rules (allow_doubles/splits/surrenders
 
     return handaction_simple(player[handno],
 			     dealer[1],
 			     allow_doubles,
 			     allow_splits,
-			     SURRENDER_N);
+			     allow_surrender);
     break;
 
   case 0: // Test strategy, hit if ptotal < 17, else stand
@@ -669,6 +690,21 @@ void read_params(char* fname) {
   get_int_param(fname, mystring, &ntrials, debug_trace);
   sprintf(mystring,"houserules");  
   get_int_param(fname, mystring, &houserules, debug_trace);
+  sprintf(mystring,"dhitssoft17");
+  get_bool_param(fname, mystring, &dhitssoft17, debug_trace);  
+  sprintf(mystring,"dblaftsplit");
+  get_bool_param(fname, mystring, &dblaftsplit, debug_trace);  
+  sprintf(mystring,"resplitaces");
+  get_bool_param(fname, mystring, &resplitaces, debug_trace);  
+  sprintf(mystring,"hitsplitaces");
+  get_bool_param(fname, mystring, &hitsplitaces, debug_trace);  
+  sprintf(mystring,"surrndr");
+  get_bool_param(fname, mystring, &surrndr, debug_trace);  
+  sprintf(mystring,"bj3to2");
+  get_bool_param(fname, mystring, &bj3to2, debug_trace);  
+  sprintf(mystring,"resplithandsmax");
+  get_int_param(fname, mystring, &resplithandsmax, debug_trace);
+  if ( resplithandsmax < 2) { resplithandsmax = 2; }
   sprintf(mystring,"strategy");  
   get_int_param(fname, mystring, &strategy, debug_trace);
   sprintf(mystring,"nbets");  
