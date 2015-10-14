@@ -23,9 +23,10 @@ __global__ void mykernel() {
 
 bool debug_trace = true, debug_printhands = false, psoft = false, dsoft = false;
 bool record_allbank = false;
-int ndecks, ntrials, houserules, strategy, nbets;
+int ndecks, ntrials, strategy, nbets, hoptc = 0;
 bool dhitssoft17 = false, dblaftsplit = true, resplitaces = false;
 bool hitsplitaces = false, surrndr = false, bj3to2 = true;
+bool hoptables = false;
 int resplithandsmax = 4;
 float penet, bank, startbank, minbet, betspread;
 char mystring[64];
@@ -46,12 +47,14 @@ int myflag = 0;
 float avegain = 0.0, siggain = 0.0, drawavegain = 0.0, drawsiggain = 0.0;
 float maxgain = 0.0, mingain = 0.0, maxbank = 0.0, minbank = 0.0;
 float maxmidbank = 0.0, minmidbank = 0.0;
-float avebet = 0.0, sigbet = 0.0, maxbet = 0.0, minebet = 0.0;
+double avebet = 0.0, sigbet = 0.0, maxbet = 0.0, minebet = 0.0;
 int nwinhands = 0, ndbusts = 0, npbusts = 0;
 float fwinhands = 0.0, fdbusts = 0.0, fpbusts = 0.0;
 int nsur = 0, nstd = 0, nhits = 0, ndbls = 0, nsplts = 0, nbjs = 0, npush = 0;
-int nbankrupt = 0, totalbets = 0;
+long nbankrupt = 0, totalbets = 0;
 float fsur = 0.0, fstd = 0.0, fhits = 0.0, fdbls = 0.0, fsplts = 0.0;
+// double tcgainhist[321];
+// long tcnumlist[321];
 
 int *testarray;
 
@@ -60,7 +63,12 @@ int main(int argc, char* argv[]) {
   int i;
   int seed = time(NULL);  
   srand(seed);
-
+  /*
+  for(i = 0; i < 321; i++) {
+    tcgainhist[i] = 0.0;
+    tcnumlist[i] = 0;
+  }
+  */
   read_params(argv[1]);
   minebet = minbet;
   initialize_shoe(shoe, ndecks);
@@ -112,42 +120,39 @@ int main(int argc, char* argv[]) {
 }
 
 void play(int trialnum) {
-  int curbets = 1, playeraction, flag = 0;
+  int curbets = 1, playeraction, flag = 0, curtc;
   float stbank, stavebet;
   bank = startbank;
   nsur = 0; nstd = 0; nhits = 0; ndbls = 0; nsplts = 0;  
   while ( !trialover(curbets) ) {
-    //    curbets++;
+
     handno = 0, nhands = 1;
     stbank = bank;
     stavebet = avebet;
-    //    printf("betno = %d; ", curbets);
 
-    /*
+
     // ADD IN SITTING OUT HANDS (really, running away)
-    if( true_counts[0] < 3 ) {
-      while( true_counts[0] < 0 ) {
-	int jayjay;
-	for( jayjay=0; jayjay<10; jayjay++){
-	  update_shoe_counts(shoe[cardpos++]);
-	  if( cardpos >= maxcardpos ) {
-	    shuffle(shoe, ndecks);
-	    cardpos = 0;
+    if (hoptables) {
+      if( true_counts[0] < hoptc ) {
+	while( true_counts[0] < 0 ) {
+	  int jayjay;
+	  for( jayjay=0; jayjay<10; jayjay++){
+	    update_shoe_counts(shoe[cardpos++]);
+	    if( cardpos >= maxcardpos ) {
+	      shuffle(shoe, ndecks);
+	      cardpos = 0;
+	    }
 	  }
 	}
       }
     }
-    */
+
+    curtc = true_counts[0];
     
     opendraw();
     flag = 0;
     while( flag == 0 ) {
       playeraction = verb(1);
-      /*      if (myflag == 0) { printf("%d ", playeraction); fflush(stdout); }
-      if ((playeraction < 0) && (myflag == 0)) {
-	printhands();
-	myflag = 1; 
-	}*/
       switch(playeraction) {
       case 0: // surrender
 	nsur++;
@@ -172,7 +177,7 @@ void play(int trialnum) {
 	ndbls++;
 	bank -= bets[handno];
 	avebet = avebet + bets[handno];
-	sigbet = sigbet + bets[handno]*bets[handno];
+	sigbet = sigbet + 3*bets[handno]*bets[handno];
 	bets[handno] = 2*bets[handno];
 	hitdeal();
 	if (--handno < 0) { flag = 4; } // Last hand doubled
@@ -193,6 +198,8 @@ void play(int trialnum) {
       }
     }
     resolvedeal();
+    //	printf("t= %d, b = %d, avebet = %f, sigbet = %f\n", trialnum, curbets, avebet, sigbet);
+
     //    allbank[nbets*trialnum+curbets-1] = bank;
     if((bank - stbank) > maxgain) { maxgain = bank - stbank; }
     if((bank - stbank) < mingain) { mingain = bank - stbank; }
@@ -201,6 +208,8 @@ void play(int trialnum) {
     if((avebet - stavebet) > maxbet) { maxbet = avebet - stavebet; }
     if((avebet - stavebet) < minebet) { minebet = avebet - stavebet; }
 
+    if (record_allbank) { allbank[nbets*trialnum+curbets-1] = bank; }
+    
     curbets++;
 
     if( debug_printhands ) { printhands(); }
@@ -299,7 +308,7 @@ void resolvedeal() {
     for(handno = 0; handno < nhands; handno++) {
 
       // Check for Blackjack
-      // Modify this according to 'houserules' parameter
+      // Modify this according to house rules
       if((ptotal[handno] == 21) && (player[handno][2] == 0) && ((dtotal != 21) || (dealer[2] != 0) )) {
 	nwinhands++;
 	nbjs++;
@@ -358,7 +367,8 @@ void splitdeal() {
   bank -= bets[handno++];
   bets[handno] = bets[handno-1];
   avebet = avebet + bets[handno];
-  sigbet = sigbet + bets[handno]*bets[handno];
+  sigbet = sigbet + (2*nhands-1)*bets[handno]*bets[handno];
+  //  printf("split! avebet = %f, sigbet = %f\n", avebet, sigbet);  
   player[handno][0] = player[handno-1][1];
   player[handno-1][1] = shoe[cardpos++];
   player[handno][1] = shoe[cardpos++];
@@ -551,7 +561,7 @@ int openbet() {
     return try;
     */
 
-
+    /*
     if( true_counts[0] > 2 ) {
 
       //      try = (bank*0.005) * round( true_counts[0] );
@@ -566,7 +576,8 @@ int openbet() {
     } else {
       return minbet;
     }
-
+    */
+    return minbet;
 
   default: // Same as case 0
     return minbet;
@@ -688,8 +699,6 @@ void read_params(char* fname) {
   if (ndecks > 8) { ndecks = 8; }
   sprintf(mystring,"ntrials");  
   get_int_param(fname, mystring, &ntrials, debug_trace);
-  sprintf(mystring,"houserules");  
-  get_int_param(fname, mystring, &houserules, debug_trace);
   sprintf(mystring,"dhitssoft17");
   get_bool_param(fname, mystring, &dhitssoft17, debug_trace);  
   sprintf(mystring,"dblaftsplit");
@@ -707,6 +716,12 @@ void read_params(char* fname) {
   if ( resplithandsmax < 2) { resplithandsmax = 2; }
   sprintf(mystring,"strategy");  
   get_int_param(fname, mystring, &strategy, debug_trace);
+  sprintf(mystring,"hoptables");
+  get_bool_param(fname, mystring, &hoptables, debug_trace);
+  if (hoptables) {
+    sprintf(mystring,"hoptc");
+    get_int_param(fname, mystring, &hoptc, debug_trace);
+  }
   sprintf(mystring,"nbets");  
   get_int_param(fname, mystring, &nbets, debug_trace);
   sprintf(mystring,"penetration");  
@@ -788,8 +803,10 @@ void compute_stats() {
   siggain = sqrt(siggain*invntrials - avegain*avegain);
   drawavegain = drawavegain*invntrials;
   drawsiggain = sqrt(drawsiggain*invntrials - drawavegain*drawavegain);
+  printf("avebet = %.1f, sigbet = %.1f, totalbets = %lu\n", avebet, sigbet, totalbets);    
   avebet = avebet/(totalbets);
-  sigbet = sqrt(sigbet/totalbets - avebet*avebet);
+  sigbet = sqrt((sigbet/totalbets) - (avebet*avebet));
+  printf("avebet = %f, sigbet = %f\n", avebet, sigbet);  
 
   //  nbankrupt = nbankrupt*invntrials;
   fwinhands = nwinhands*invntrials;
@@ -816,8 +833,17 @@ void write_stats(char* p_file) {
     exit(1);
   }
 
-  fprintf(fp, "houserules = \t%d\n", houserules);
+  fprintf(fp, "Dealer hits soft 17: \t%s\n", dhitssoft17 ? "true" : "false");
+  fprintf(fp, "Can double after split: %s\n", dblaftsplit ? "true" : "false");
+  fprintf(fp, "Can resplit aces: \t%s\n", resplitaces ? "true" : "false");
+  fprintf(fp, "Can hit split aces: \t%s\n", hitsplitaces ? "true" : "false");
+  fprintf(fp, "Surrenders allowed: \t%s\n", surrndr ? "true" : "false");
+  fprintf(fp, "Blackjack payout: \t%s\n", bj3to2 ? "3 to 2" : "6 to 5");
+  fprintf(fp, "Maximum number of split hands  = %d\n\n", resplithandsmax);  
+  
   fprintf(fp, "strategy = \t%d\n", strategy);
+  fprintf(fp, "Hop tables: \t%s\n", hoptables ? "true" : "false");  
+  fprintf(fp, "hoptc = \t%d\n", hoptc);  
   fprintf(fp, "ntrials = \t%d\n", ntrials);
   fprintf(fp, "nbets = \t%d\n\n", nbets);
   

@@ -4,7 +4,7 @@
 
 # 'debug_trace' (true or false) is a boolean print-out flag
 debug_trace := false
-debug_printhands := true
+debug_printhands := false
 
 # 'ndecks' is integer for number of decks in the shoe (1 to 8)
 ndecks := 6
@@ -13,7 +13,7 @@ ndecks := 6
 penetration := 0.8
 
 # 'bank' is the float starting bank size
-bank := 500.0
+bank := 1000.0
 
 # 'minbet' is the float minimum bet
 minbet := 10.0
@@ -23,11 +23,9 @@ minbet := 10.0
 betspread := 10.0
 
 # 'ntrials' is the integer number of trials
-ntrials := 1
+ntrials := 100000
 
-# 'houserules' is the integer house rule set
-# Currently not used
-# Specify all rules individually instead
+# Specify all house rules individually instead
 # 'dhitssoft17'     - Whether dealer hits soft 17
 # 'dblaftsplit'     - Double after split
 # 'resplitaces'     - Resplit aces
@@ -35,7 +33,6 @@ ntrials := 1
 # 'surrndr'         - Surrender allowed
 # 'bj3to2'          - Blacjack pays 3 to 2 (and not 6 to 5)
 # 'resplithandsmax' - Number of hands player can resplit to
-houserules := 0
 dhitssoft17 := false
 dblaftsplit := true
 resplitaces := false
@@ -50,13 +47,17 @@ resplithandsmax := 4
 # 999 - split if possible, double if < 17, else stand (For testing)
 strategy := 1
 
+# 'hoptables' is boolean that determines if to leave table
+# when true count drops below 'hoptc'
+hoptables := false
+hoptc := -3
 
 # 'nbets' is the integer that determines
 # what ends a trial
 # 0 - End trial when bank <= 0
 # N - (N > 0) End trial after N bets or when bank <= 0
 # M - (M < 0) End trial after |M| bets regardless of bank
-nbets := 1
+nbets := 1000
 
 
 
