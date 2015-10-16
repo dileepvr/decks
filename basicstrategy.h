@@ -497,6 +497,168 @@ int simplify_action( int x, int allow_double, int allow_split, int allow_surrend
 
   };
 
+
+  int complexhandaction(int * hand_in,
+			int dealercard_in,
+			int num_decks,
+			int adv_strat,
+			bool dhsoft17
+			)
+
+  {
+    int hand[21] = {0,0,0,0,0,0,0,0,0,0,0,0};
+    int num_ace=0;
+    int num_cards=0;
+    int total=0;
+    int dealercard=0;
+    //    int hard=0;
+    //    int action=0;
+    int i;
+
+    if( dealercard_in > 10 ){
+      dealercard = 10;
+    } else if( dealercard_in == 1 ) {
+      dealercard = 11;
+    } else {
+      dealercard = dealercard_in;
+    }
+
+
+
+    // Count cards in hand, convert hand type
+    i=0;
+    while( hand_in[i] != 0 ){
+      num_cards++;
+      if( hand_in[i] > 10 ){
+	hand[i] = 10;
+      } else if( hand_in[i] == 1 ) {
+	hand[i] = 11;
+      } else {
+	hand[i] = hand_in[i];
+      }
+      i++;    
+    }
+
+    //    printf( "FAKEPAIR|%d|%d|%d|-|%d|", hand[0], hand[1], hand[2], dealercard );
+
+
+    // If only 2 cards and they match, return pair offset. Done.
+        if( hand_in[2] == 0 && hand[0] == hand[1] ){
+	  //	  printf( "FAKEPAIR|%d|%d|%d|", hand[0], hand[1], hand[2] );
+	  if(num_decks < 2) { // 1 deck
+	    if(dhsoft17) {
+	      return H17_0[hand[0]+OFFSET_PAIR][dealercard+OFFSET_DEALER];
+	    } else {
+	      return S17_0[hand[0]+OFFSET_PAIR][dealercard+OFFSET_DEALER];	      
+	    }
+	  } else if(num_decks < 4) { // 2 decks
+	    if(dhsoft17) {
+	      return H17_1[hand[0]+OFFSET_PAIR][dealercard+OFFSET_DEALER];
+	    } else {
+	      return S17_1[hand[0]+OFFSET_PAIR][dealercard+OFFSET_DEALER];	      
+	    }	    
+	  } else { // 4 or more decks
+	    if(dhsoft17) {
+	      return H17_2[hand[0]+OFFSET_PAIR][dealercard+OFFSET_DEALER];
+	    } else {
+	      return S17_2[hand[0]+OFFSET_PAIR][dealercard+OFFSET_DEALER];	      
+	    }	    
+	  }
+        }
+
+
+    //    if( ( hand[2] == 0 ) && ( hand[0] == hand[1] ) ){
+      //printf( "PAIR|%d|%d|", hand[0]+OFFSET_PAIR, dealercard+OFFSET_DEALER );
+    //      return H17_0[hand[0]+OFFSET_PAIR][dealercard+OFFSET_DEALER];
+    //    }
+
+    // Total the hand, count the aces
+    for( i=0; i<num_cards; i++){    
+      if( hand[i] == 11 ) { num_ace++; }
+      total += hand[i];
+    }
+
+    // If we're over 21 with an ace, count ace 1 point until under 21 (or until we run out of aces)
+    while( num_ace > 0 ){
+      if( total>21 ){
+	total -= 10;
+	num_ace--;
+      } else {
+	break;
+      }
+    }
+
+
+
+    // If we're over 21 with an ace, count ace 1 point until under 21 (or until we run out of aces)
+    //    while( num_ace > 0 ){
+    //      if( total>21 ){
+    // total -= 10;
+    //	num_ace--;
+    //      } else {
+    //	break;
+    //      }
+    //    }
+
+    // If index is out of bounds, fix it. We shouldn't be allowed to do anything on a bust anyway (right?!).
+    if( total > 21 ){
+      total=21;
+    }
+
+    // If no aces acting as 11 points, we have a hard hand, otherwise it's a soft hand
+    if( num_ace == 0 ){
+      //      printf( "HARD|%d|%d|", total, dealercard );
+      //      printf( "HARD|%d|%d|", total+OFFSET_HARD, dealercard+OFFSET_DEALER );
+      
+
+      //      printf( "THIS|%d|", H17_0[total+OFFSET_HARD][dealercard+OFFSET_DEALER] );
+
+      if(num_decks < 2) { // 1 deck
+	if(dhsoft17) {
+	  return H17_0[total+OFFSET_HARD][dealercard+OFFSET_DEALER];
+	} else {
+	  return S17_0[total+OFFSET_HARD][dealercard+OFFSET_DEALER];
+	}
+      } else if(num_decks < 4) { // 2 decks
+	if(dhsoft17) {
+	  return H17_1[total+OFFSET_HARD][dealercard+OFFSET_DEALER];
+	} else {
+	  return S17_1[total+OFFSET_HARD][dealercard+OFFSET_DEALER];
+	}	
+      } else { // 4 or more decks
+	if(dhsoft17) {
+	  return H17_2[total+OFFSET_HARD][dealercard+OFFSET_DEALER];
+	} else {
+	  return S17_2[total+OFFSET_HARD][dealercard+OFFSET_DEALER];
+	}	
+      }
+    } else {
+      //printf( "SOFT|%d|%d|", total+OFFSET_SOFT, dealercard+OFFSET_DEALER );
+      if(num_decks < 2) { // 1 deck
+	if(dhsoft17) {
+	  return H17_0[total+OFFSET_SOFT][dealercard+OFFSET_DEALER];
+	} else {
+	  return S17_0[total+OFFSET_SOFT][dealercard+OFFSET_DEALER];
+	}
+      } else if(num_decks < 4) { // 2 decks
+	if(dhsoft17) {
+	  return H17_1[total+OFFSET_SOFT][dealercard+OFFSET_DEALER];
+	} else {
+	  return S17_1[total+OFFSET_SOFT][dealercard+OFFSET_DEALER];
+	}	
+      } else { // 4 or more decks
+	if(dhsoft17) {
+	  return H17_2[total+OFFSET_SOFT][dealercard+OFFSET_DEALER];
+	} else {
+	  return S17_2[total+OFFSET_SOFT][dealercard+OFFSET_DEALER];
+	}	
+      }
+      
+    }
+
+
+  };
+
 // macro that filters handaction through simplify action
 int handaction_simple(  int * hand,
 			int dealercard,
@@ -506,6 +668,20 @@ int handaction_simple(  int * hand,
 {
 
   return simplify_action(handaction(hand, dealercard), allow_double, allow_split, allow_surrender);
+
+}
+
+int handaction_complex( int * hand,
+			int dealercard,
+			int allow_double,
+			int allow_split,
+			int allow_surrender,
+			int numdecks,
+			int advanced_stratnum,
+			bool dhsoft17)
+{
+
+  return simplify_action(complexhandaction(hand, dealercard, numdecks, advanced_stratnum,dhsoft17), allow_double, allow_split, allow_surrender);
 
 }
 

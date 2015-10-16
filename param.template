@@ -23,7 +23,14 @@ minbet := 10.0
 betspread := 10.0
 
 # 'ntrials' is the integer number of trials
-ntrials := 100000
+ntrials := 1000
+
+# 'nbets' is the integer that determines
+# what ends a trial
+# 0 - End trial when bank <= 0
+# N - (N > 0) End trial after N bets or when bank <= 0
+# M - (M < 0) End trial after |M| bets regardless of bank
+nbets := 1000
 
 # Specify all house rules individually instead
 # 'dhitssoft17'     - Whether dealer hits soft 17
@@ -52,17 +59,12 @@ strategy := 1
 hoptables := false
 hoptc := -3
 
-# 'nbets' is the integer that determines
-# what ends a trial
-# 0 - End trial when bank <= 0
-# N - (N > 0) End trial after N bets or when bank <= 0
-# M - (M < 0) End trial after |M| bets regardless of bank
-nbets := 1000
-
-
-
-
 # 'record_allbank' (true or false) determines whether or not
 # to write bank for every bet and every trial into file with
 # filename <basefilename>.allbank.dat
 record_allbank := false
+
+
+# 'record_hist' (true or false) records count based stats
+# to file with filename <basefilename>.tchist.dat
+record_hist := true

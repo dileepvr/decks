@@ -22,7 +22,7 @@ __global__ void mykernel() {
 */
 
 bool debug_trace = true, debug_printhands = false, psoft = false, dsoft = false;
-bool record_allbank = false;
+bool record_allbank = false, record_hist = false;
 int ndecks, ntrials, strategy, nbets, hoptc = 0;
 bool dhitssoft17 = false, dblaftsplit = true, resplitaces = false;
 bool hitsplitaces = false, surrndr = false, bj3to2 = true;
@@ -53,8 +53,8 @@ float fwinhands = 0.0, fdbusts = 0.0, fpbusts = 0.0;
 int nsur = 0, nstd = 0, nhits = 0, ndbls = 0, nsplts = 0, nbjs = 0, npush = 0;
 long nbankrupt = 0, totalbets = 0;
 float fsur = 0.0, fstd = 0.0, fhits = 0.0, fdbls = 0.0, fsplts = 0.0;
-// double tcgainhist[321];
-// long tcnumlist[321];
+double tcgainhist[321];
+long tcnumlist[321], gainhist[321];
 
 int *testarray;
 
@@ -63,12 +63,14 @@ int main(int argc, char* argv[]) {
   int i;
   int seed = time(NULL);  
   srand(seed);
-  /*
+
   for(i = 0; i < 321; i++) {
     tcgainhist[i] = 0.0;
+    gainhist[i] = 0;
     tcnumlist[i] = 0;
   }
-  */
+
+  
   read_params(argv[1]);
   minebet = minbet;
   initialize_shoe(shoe, ndecks);
@@ -105,6 +107,18 @@ int main(int argc, char* argv[]) {
   write_stats(mystring);
   if(debug_trace) { printf(" done.\n"); }
 
+  if(record_hist) {
+    if(debug_trace) { printf("Writing hist..."); }
+    sprintf(mystring,argv[1]);
+    strcat(mystring,".tchist.dat");
+    write_hist(mystring);
+    sprintf(mystring,argv[1]);
+    strcat(mystring,".ghist.dat");
+    write_ghist(mystring);
+    if(debug_trace) { printf(" done.\n"); }
+  }
+
+  
   if(record_allbank) {
     sprintf(mystring,argv[1]);
     strcat(mystring,".allbank.dat");
@@ -147,7 +161,13 @@ void play(int trialnum) {
       }
     }
 
-    curtc = true_counts[0];
+    if(record_hist) {
+      curtc = floor(true_counts[0]);
+      if((curtc > -161) && (curtc < 161)){
+	tcnumlist[curtc+160]++;
+      } 
+    }
+
     
     opendraw();
     flag = 0;
@@ -211,8 +231,15 @@ void play(int trialnum) {
     if (record_allbank) { allbank[nbets*trialnum+curbets-1] = bank; }
     
     curbets++;
+    if(record_hist) {
+      if((curtc > -161) && (curtc < 161)){
+	tcgainhist[curtc+160] += bank - stbank;
+      }
+      gainhist[(int)floor((bank-stbank)/minbet)+160]++;
+    }
 
     if( debug_printhands ) { printhands(); }
+
 
     //    printf("trail no: %d. bet no. %d\n", trialnum, curbets);
 
@@ -641,12 +668,21 @@ int pdecision() {
 
   case 1:
     // Does basic action using house rules (allow_doubles/splits/surrenders
-
+    /*
     return handaction_simple(player[handno],
 			     dealer[1],
 			     allow_doubles,
 			     allow_splits,
-			     allow_surrender);
+			     allow_surrender);*/
+    return handaction_complex(player[handno],
+			      dealer[1],
+			      allow_doubles,
+			      allow_splits,
+			      allow_surrender,
+			      ndecks,
+			      0,
+			      dhitssoft17);
+
     break;
 
   case 0: // Test strategy, hit if ptotal < 17, else stand
@@ -737,6 +773,8 @@ void read_params(char* fname) {
   get_real_param(fname, mystring, &betspread, debug_trace);
   sprintf(mystring,"record_allbank");
   get_bool_param(fname, mystring, &record_allbank, debug_trace);
+  sprintf(mystring,"record_hist");
+  get_bool_param(fname, mystring, &record_hist, debug_trace);
   
 }
 
@@ -803,10 +841,8 @@ void compute_stats() {
   siggain = sqrt(siggain*invntrials - avegain*avegain);
   drawavegain = drawavegain*invntrials;
   drawsiggain = sqrt(drawsiggain*invntrials - drawavegain*drawavegain);
-  printf("avebet = %.1f, sigbet = %.1f, totalbets = %lu\n", avebet, sigbet, totalbets);    
   avebet = avebet/(totalbets);
   sigbet = sqrt((sigbet/totalbets) - (avebet*avebet));
-  printf("avebet = %f, sigbet = %f\n", avebet, sigbet);  
 
   //  nbankrupt = nbankrupt*invntrials;
   fwinhands = nwinhands*invntrials;
@@ -823,6 +859,44 @@ void compute_stats() {
   
 }
 
+
+void write_hist(char* p_file) {
+
+  FILE *fp;
+  int bb;
+
+  if((fp = fopen(p_file, "w")) == NULL) {
+    printf("Couldn't open file: %s\n", p_file);
+    exit(1);
+  }
+
+  fprintf(fp,"# true count \t frequency \t gain \t scaled gain\n\n");
+
+  for(bb = 0; bb < 321; bb++) {
+    if(tcnumlist[bb] > 0) {
+      fprintf(fp,"%d\t%lu\t%f\t%f\n",bb-160,tcnumlist[bb],tcgainhist[bb]/(1.0*tcnumlist[bb]),tcgainhist[bb]/(1.0*totalbets));
+    }
+  }
+  
+}
+
+void write_ghist(char* p_file) {
+
+  FILE *fp;
+  int bb;
+
+  if((fp = fopen(p_file, "w")) == NULL) {
+    printf("Couldn't open file: %s\n", p_file);
+    exit(1);
+  }
+
+  fprintf(fp,"# gain/minbet \t probability\n\n");
+
+  for(bb = 0; bb < 321; bb++) {
+    fprintf(fp,"%d\t%f\n",bb-160,1.0*gainhist[bb]/(1.0*totalbets));
+  }
+  
+}
 
 void write_stats(char* p_file) {
 
@@ -855,6 +929,7 @@ void write_stats(char* p_file) {
   fprintf(fp, "betspread = \t%f\n\n", betspread);
 
   fprintf(fp, "Average gain per trial = \t%f\n", avegain);
+  printf("Avegain = \t%f, siggain = \t%f\n", avegain,siggain);  
   fprintf(fp, "Sigma gain over trials = \t%f\n", siggain);
   fprintf(fp, "Average gain per draw = \t%f\n", drawavegain);
   fprintf(fp, "Sigma gain over draws = \t%f\n\n", drawsiggain);
@@ -954,7 +1029,11 @@ void update_shoe_counts(int card) {
   }
   ndecks_left = ceil(1.0*(maxcardpos - cardpos)/52.0);
   for (ii = 0; ii < 6; ii++) {
-    true_counts[ii] = shoe_counts[ii]*1.0/ndecks_left;
+    if(ndecks_left > 0) {
+      true_counts[ii] = shoe_counts[ii]*1.0/ndecks_left;
+    } else {
+      true_counts[ii] = shoe_counts[ii]*1.0;      
+    }
   }
 
   
