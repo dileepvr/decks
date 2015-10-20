@@ -1,4 +1,6 @@
 *~
 *.o
 main
+main2
 *.dat
+data/

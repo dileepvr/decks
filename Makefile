@@ -18,7 +18,7 @@ CFLAGS = $(COMPILERFLAGS) $(INCLUDE)
 LIBRARIES = -lm #-lcurand
 COMPILERFLAGS = #-ccbin $(GCC)
 
-EXECUTABLE = main
+EXECUTABLE = main2
 OBJFILES = main.o fileio.o
 
 all: $(EXECUTABLE)

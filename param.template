@@ -7,10 +7,10 @@ debug_trace := false
 debug_printhands := false
 
 # 'ndecks' is integer for number of decks in the shoe (1 to 8)
-ndecks := 6
+ndecks := 2
 
 # 'penetration' is the float shoe penetration percentage (0.1 minimum)
-penetration := 0.8
+penetration := 0.5
 
 # 'bank' is the float starting bank size
 bank := 1000.0
@@ -22,8 +22,13 @@ minbet := 10.0
 # If maxbet > bank, entire bank might be bet
 betspread := 10.0
 
+# 'betramp' is style of bet ramping (1 to 5)
+# 3 is linear. 5 is 4th power polynomial.
+# 1 is sqrt(sqrt())
+betramp := 3
+
 # 'ntrials' is the integer number of trials
-ntrials := 1000
+ntrials := 100000
 
 # 'nbets' is the integer that determines
 # what ends a trial
@@ -40,7 +45,7 @@ nbets := 1000
 # 'surrndr'         - Surrender allowed
 # 'bj3to2'          - Blacjack pays 3 to 2 (and not 6 to 5)
 # 'resplithandsmax' - Number of hands player can resplit to
-dhitssoft17 := false
+dhitssoft17 := true
 dblaftsplit := true
 resplitaces := false
 hitsplitaces := false
@@ -51,8 +56,9 @@ resplithandsmax := 4
 # 'strategy' is the integer strategy to test
 # 0 - Test strategy (keep betting minbet)
 # 1 - Basic strategy (no counting)
+# 2 - Basic strategy with bet spread and bet ramp
 # 999 - split if possible, double if < 17, else stand (For testing)
-strategy := 1
+strategy := 2
 
 # 'hoptables' is boolean that determines if to leave table
 # when true count drops below 'hoptc'
@@ -68,3 +74,4 @@ record_allbank := false
 # 'record_hist' (true or false) records count based stats
 # to file with filename <basefilename>.tchist.dat
 record_hist := true
+

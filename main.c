@@ -27,7 +27,7 @@ int ndecks, ntrials, strategy, nbets, hoptc = 0;
 bool dhitssoft17 = false, dblaftsplit = true, resplitaces = false;
 bool hitsplitaces = false, surrndr = false, bj3to2 = true;
 bool hoptables = false;
-int resplithandsmax = 4;
+int resplithandsmax = 4, betramp = 3;
 float penet, bank, startbank, minbet, betspread;
 char mystring[64];
 int shoe[416], player[8][21];
@@ -172,7 +172,7 @@ void play(int trialnum) {
     opendraw();
     flag = 0;
     while( flag == 0 ) {
-      playeraction = verb(1);
+      playeraction = (int)(verb(1));
       switch(playeraction) {
       case 0: // surrender
 	nsur++;
@@ -549,7 +549,7 @@ bool handbust() {
   return false;
 }
 
-int verb(int state) {
+float verb(int state) {
   // This is the player action function
   switch(state) {
   case 0: // pre-deal betting cycle, return bet amount
@@ -561,9 +561,10 @@ int verb(int state) {
   }
 }
 
-int openbet() {
+float openbet() {
 
   int try;
+  float factor;
   float k_p, k_b, k_q;
 
   switch(strategy) {
@@ -605,6 +606,34 @@ int openbet() {
     }
     */
     return minbet;
+
+  case 2:
+
+    try = minbet;
+    if (true_counts[0] > 0) {
+      switch(betramp) {
+      case 1: // sqrt(sqrt(x/5))
+	factor = sqrt(sqrt(true_counts[0]/5))*betspread;
+	break;
+      case 2: // sqrt(x/5)
+	factor = sqrt(true_counts[0]/5.0)*betspread;
+	break;
+      case 3: // x/5
+	factor = true_counts[0]/5.0*betspread;
+	break;
+      case 4: // x*x/25
+	factor = true_counts[0]*true_counts[0]/25.0*betspread;
+	break;
+      default: // x*x*x*x/625
+	factor = pow(true_counts[0],4)/625.0*betspread;
+	break;
+      }
+
+      if(factor < 1.0) { factor = 1.0; }
+      if(factor > betspread) { factor = betspread; }
+    } else { factor = 1.0; }
+	
+    return factor*try;
 
   default: // Same as case 0
     return minbet;
@@ -667,6 +696,7 @@ int pdecision() {
     }
 
   case 1:
+  case 2:
     // Does basic action using house rules (allow_doubles/splits/surrenders
     /*
     return handaction_simple(player[handno],
@@ -724,7 +754,7 @@ bool trialover(int curbetno) {
 void read_params(char* fname) {
 
   sprintf(mystring,"debug_trace");
-  get_bool_param(fname, mystring, &debug_trace, true);
+  get_bool_param(fname, mystring, &debug_trace, false);
 
   sprintf(mystring,"debug_printhands");
   get_bool_param(fname, mystring, &debug_printhands, debug_trace);
@@ -733,6 +763,10 @@ void read_params(char* fname) {
   get_int_param(fname, mystring, &ndecks, debug_trace);
   if (ndecks < 1) { ndecks = 1; }
   if (ndecks > 8) { ndecks = 8; }
+  sprintf(mystring,"betramp");
+  get_int_param(fname, mystring, &betramp, debug_trace);
+  if (betramp < 1) { betramp = 1; }
+  if (betramp > 5) { betramp = 5; }
   sprintf(mystring,"ntrials");  
   get_int_param(fname, mystring, &ntrials, debug_trace);
   sprintf(mystring,"dhitssoft17");
@@ -890,10 +924,10 @@ void write_ghist(char* p_file) {
     exit(1);
   }
 
-  fprintf(fp,"# gain/minbet \t probability\n\n");
+  fprintf(fp,"# gain/minbet \t probability \t product\n\n");
 
   for(bb = 0; bb < 321; bb++) {
-    fprintf(fp,"%d\t%f\n",bb-160,1.0*gainhist[bb]/(1.0*totalbets));
+    fprintf(fp,"%d\t%f\t%f\n",bb-160,1.0*gainhist[bb]/(1.0*totalbets),(bb-160)*1.0*gainhist[bb]/(1.0*totalbets));
   }
   
 }
@@ -927,9 +961,10 @@ void write_stats(char* p_file) {
   fprintf(fp, "bank = \t\t%f\n", startbank);
   fprintf(fp, "minbet = \t%f\n", minbet);
   fprintf(fp, "betspread = \t%f\n\n", betspread);
+  fprintf(fp, "betramp = \t%f\n\n", betramp);  
 
   fprintf(fp, "Average gain per trial = \t%f\n", avegain);
-  printf("Avegain = \t%f, siggain = \t%f\n", avegain,siggain);  
+  printf("%f\t%f\n", avegain/100.0,siggain/100.0);  
   fprintf(fp, "Sigma gain over trials = \t%f\n", siggain);
   fprintf(fp, "Average gain per draw = \t%f\n", drawavegain);
   fprintf(fp, "Sigma gain over draws = \t%f\n\n", drawsiggain);
