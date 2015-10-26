@@ -1,9 +1,11 @@
-void printhands();
+void printhands(int);
 void updateptotal();
 void updatedtotal();
 void hitdeal();
 void recomputeptotal();
 void resolvedeal();
+int pevenmoney();
+int pinsurance();
 int pdecision();
 void splitdeal();
 void play(int);

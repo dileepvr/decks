@@ -360,6 +360,7 @@ int simplify_action( int x, int allow_double, int allow_split, int allow_surrend
     break;
 
   case RH:
+    printf("RH\n");
     if( allow_surrender ){
       return R;
     } else {

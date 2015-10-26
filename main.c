@@ -27,7 +27,7 @@ int ndecks, ntrials, strategy, nbets, hoptc = 0;
 bool dhitssoft17 = false, dblaftsplit = true, resplitaces = false;
 bool hitsplitaces = false, surrndr = false, bj3to2 = true;
 bool hoptables = false;
-int resplithandsmax = 4, betramp = 3;
+int resplithandsmax = 4, betramp = 3, ramptc = 5;
 float penet, bank, startbank, minbet, betspread;
 char mystring[64];
 int shoe[416], player[8][21];
@@ -50,9 +50,9 @@ float maxmidbank = 0.0, minmidbank = 0.0;
 double avebet = 0.0, sigbet = 0.0, maxbet = 0.0, minebet = 0.0;
 int nwinhands = 0, ndbusts = 0, npbusts = 0;
 float fwinhands = 0.0, fdbusts = 0.0, fpbusts = 0.0;
-int nsur = 0, nstd = 0, nhits = 0, ndbls = 0, nsplts = 0, nbjs = 0, npush = 0;
+int nsur = 0, nstd = 0, nhits = 0, ndbls = 0, nsplts = 0, nins = 0, nbjs = 0, npush = 0;
 long nbankrupt = 0, totalbets = 0;
-float fsur = 0.0, fstd = 0.0, fhits = 0.0, fdbls = 0.0, fsplts = 0.0;
+float fsur = 0.0, fstd = 0.0, fhits = 0.0, fdbls = 0.0, fsplts = 0.0, fins = 0.0;
 double tcgainhist[321];
 long tcnumlist[321], gainhist[321];
 
@@ -75,7 +75,6 @@ int main(int argc, char* argv[]) {
   minebet = minbet;
   initialize_shoe(shoe, ndecks);
   shuffle(shoe, ndecks);
-
 
   ncards = 52*8;
   maxcardpos = floor(52*ndecks*penet);
@@ -134,10 +133,10 @@ int main(int argc, char* argv[]) {
 }
 
 void play(int trialnum) {
-  int curbets = 1, playeraction, flag = 0, curtc;
+  int curbets = 1, playeraction, flag = 0, insflag = 0, curtc;
   float stbank, stavebet;
   bank = startbank;
-  nsur = 0; nstd = 0; nhits = 0; ndbls = 0; nsplts = 0;  
+  nsur = 0; nstd = 0; nhits = 0; ndbls = 0; nsplts = 0, nins = 0;  
   while ( !trialover(curbets) ) {
 
     handno = 0, nhands = 1;
@@ -171,6 +170,35 @@ void play(int trialnum) {
     
     opendraw();
     flag = 0;
+    insflag = 0;
+    if (dealer[1] == 1) {
+      if (ptotal[handno] < 21) {     // Ask for insurance
+	if (pinsurance() == 1) { 
+	  insflag = 1;
+	  if (dealer[0] > 9) {
+	    bank += bets[handno];
+	    flag = 5; // Successfully insured            
+	    dcardno = 2;
+	    update_shoe_counts(dealer[0]);          	  
+	    dtotal = 21;
+	  } else {
+	    bank -= bets[handno]/2.0;
+	  }
+	}
+      } else { // Ask if accepting even money
+	if (pevenmoney() == 1) {
+	  insflag = 2;
+	  bank += 2.0*bets[handno];
+	  flag = 6; // Accepted even money
+	    dcardno = 2;
+	    update_shoe_counts(dealer[0]);          	  
+	    if (dealer[0] < 9) { dtotal += dealer[0]; }
+	    else {dtotal += 10; }
+	}
+      }
+    }
+
+	  
     while( flag == 0 ) {
       playeraction = (int)(verb(1));
       switch(playeraction) {
@@ -217,7 +245,8 @@ void play(int trialnum) {
 	break;
       }
     }
-    resolvedeal();
+
+    if (flag < 5) { resolvedeal(); }
     //	printf("t= %d, b = %d, avebet = %f, sigbet = %f\n", trialnum, curbets, avebet, sigbet);
 
     //    allbank[nbets*trialnum+curbets-1] = bank;
@@ -238,7 +267,7 @@ void play(int trialnum) {
       gainhist[(int)floor((bank-stbank)/minbet)+160]++;
     }
 
-    if( debug_printhands ) { printhands(); }
+    if( debug_printhands ) { printhands(insflag); }
 
 
     //    printf("trail no: %d. bet no. %d\n", trialnum, curbets);
@@ -257,12 +286,13 @@ void play(int trialnum) {
   fstd = fstd + 1.0*nstd;///(curbets-1);
   fhits = fhits + 1.0*nhits;///(curbets-1);
   fdbls = fdbls + 1.0*ndbls;///(curbets-1);
-  fsplts = fsplts + 1.0*nsplts;///(curbets-1);  
+  fsplts = fsplts + 1.0*nsplts;///(curbets-1);
+  fins = fins + 1.0*nins;
   totalbets = totalbets + curbets - 1;
   
 }
 
-void printhands() {
+void printhands(int localflag) {
   int ll, temp;
 
   printf("Bank: %f \n", bank);
@@ -271,6 +301,7 @@ void printhands() {
   for(ll = 0; ll < dcardno; ll++) {
     printf("%d ", dealer[ll]);
   }
+  if(localflag == 1) { printf(" (INSURANCE)"); }
   printf("\ndtotal = %d ", dtotal);
   if (dtotal > 21) { printf("(BUST!)\n"); }
   else { printf("\n"); }
@@ -283,10 +314,14 @@ void printhands() {
     } printf("\nptotal = %d ", ptotal[temp]);
     if(ptotal[temp] > 21){
       printf("(BUST!)\n");
+    } else if ((localflag  == 2) && (ptotal[temp] == 21)) {
+      printf("(EVEN MONEY!)\n");
     } else if (ptotal[temp] == dtotal) {
-      printf("(PUSH!)\n");      
+      printf("(PUSH!)\n"); 
     } else if((ptotal[temp] > dtotal) || (dtotal > 21)) {
-      printf("(WIN!)\n");            
+      printf("(WIN!)\n");
+    } else if((dtotal == 21) && (localflag == 1) && (dealer[2] == 0)){
+      printf("(INSURED)\n");
     } else {
       printf("(LOSS!)\n");                  
     }
@@ -613,19 +648,19 @@ float openbet() {
     if (true_counts[0] > 0) {
       switch(betramp) {
       case 1: // sqrt(sqrt(x/5))
-	factor = sqrt(sqrt(true_counts[0]/5))*betspread;
+	factor = sqrt(sqrt(true_counts[0]/ramptc))*betspread;
 	break;
       case 2: // sqrt(x/5)
-	factor = sqrt(true_counts[0]/5.0)*betspread;
+	factor = sqrt(true_counts[0]*1.0/ramptc)*betspread;
 	break;
       case 3: // x/5
-	factor = true_counts[0]/5.0*betspread;
+	factor = true_counts[0]/ramptc*betspread;
 	break;
       case 4: // x*x/25
-	factor = true_counts[0]*true_counts[0]/25.0*betspread;
+	factor = true_counts[0]*true_counts[0]/ramptc/ramptc*betspread;
 	break;
       default: // x*x*x*x/625
-	factor = pow(true_counts[0],4)/625.0*betspread;
+	factor = pow(true_counts[0],4)/pow(1.0*ramptc,4)*betspread;
 	break;
       }
 
@@ -637,6 +672,29 @@ float openbet() {
 
   default: // Same as case 0
     return minbet;
+  }
+}
+
+int pevenmoney() {
+  /* Return 1 if accepting even money. Else return 0 */
+  switch(strategy) {
+  case 999: // test: always ask for even money
+    return 1;
+  case 1: // Basic strategy (no counting)
+  case 2: // Basic strategy with bet spread and bet ramp
+    return 1;
+  default:
+    return 0;
+  }
+}
+
+int pinsurance() {
+  /* Return 1 if asking for insurance. Else return 0 */
+  switch(strategy) {
+  case 999: // test: always insure when asked
+    return 1;
+  default:
+    return 0;
   }
 }
 
@@ -767,6 +825,9 @@ void read_params(char* fname) {
   get_int_param(fname, mystring, &betramp, debug_trace);
   if (betramp < 1) { betramp = 1; }
   if (betramp > 5) { betramp = 5; }
+  sprintf(mystring,"ramptc");
+  get_int_param(fname, mystring, &ramptc, debug_trace);
+  if (ramptc < 1) { ramptc = 1; }
   sprintf(mystring,"ntrials");  
   get_int_param(fname, mystring, &ntrials, debug_trace);
   sprintf(mystring,"dhitssoft17");
@@ -888,6 +949,7 @@ void compute_stats() {
   fhits = fhits*invntrials;
   fdbls = fdbls*invntrials;
   fsplts = fsplts*invntrials;
+  fins = fins*invntrials;
   nbjs = nbjs*invntrials;
   npush = npush*invntrials;
   
@@ -964,7 +1026,7 @@ void write_stats(char* p_file) {
   fprintf(fp, "betramp = \t%f\n\n", betramp);  
 
   fprintf(fp, "Average gain per trial = \t%f\n", avegain);
-  printf("%f\t%f\n", avegain/100.0,siggain/100.0);  
+  //  printf("%f\t%f\n", avegain/100.0,siggain/100.0);  
   fprintf(fp, "Sigma gain over trials = \t%f\n", siggain);
   fprintf(fp, "Average gain per draw = \t%f\n", drawavegain);
   fprintf(fp, "Sigma gain over draws = \t%f\n\n", drawsiggain);
@@ -992,6 +1054,7 @@ void write_stats(char* p_file) {
   fprintf(fp, "Average number of hits = \t%f\n", fhits);
   fprintf(fp, "Average number of doubles = \t%f\n", fdbls);
   fprintf(fp, "Average number of splits = \t%f\n", fsplts);
+  fprintf(fp, "Average number of insurances = \t%f\n", fins);  
   fprintf(fp, "Average number of player blackjacks = \t%d\n", nbjs);
   fprintf(fp, "Average number of player pushes = \t%d\n", npush);
   
