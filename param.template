@@ -4,7 +4,7 @@
 
 # 'debug_trace' (true or false) is a boolean print-out flag
 debug_trace := false
-debug_printhands := true
+debug_printhands := false
 
 # 'ndecks' is integer for number of decks in the shoe (1 to 8)
 ndecks := 2
@@ -20,26 +20,26 @@ minbet := 10.0
 
 # 'betspread' is the float ratio of maxbet/minbet
 # If maxbet > bank, entire bank might be bet
-betspread := 10.0
+betspread := 20.0
 
 # 'betramp' is style of bet ramping (1 to 5)
 # 3 is linear. 5 is 4th power polynomial.
 # 1 is sqrt(sqrt())
-betramp := 3
+betramp := 1
 
 # 'ramptc' is true count when full bet spread is reached
 # keep this a positive non-zero integer
-ramptc := 5;
+ramptc := 5
 
 # 'ntrials' is the integer number of trials
-ntrials := 1
+ntrials := 10000
 
 # 'nbets' is the integer that determines
 # what ends a trial
 # 0 - End trial when bank <= 0
 # N - (N > 0) End trial after N bets or when bank <= 0
 # M - (M < 0) End trial after |M| bets regardless of bank
-nbets := 1
+nbets := 1000
 
 # Specify all house rules individually instead
 # 'dhitssoft17'     - Whether dealer hits soft 17
@@ -61,8 +61,16 @@ resplithandsmax := 4
 # 0 - Test strategy (keep betting minbet)
 # 1 - Basic strategy (no counting)
 # 2 - Basic strategy with bet spread and bet ramp
+# 3 - Illustrious 18 without bet spread
 # 999 - split if possible, double if < 17, else stand (For testing)
-strategy := 999
+strategy := 2
+
+# 'illorder' is the order upto which illustrious 18 rules apply
+# Illustrious 18 won't be used if 'strategy' doesn't use it,
+# or if 'illorder' is set to 0.
+# For sweet 16, same parameter is used. 'strategy' accounts
+# for the difference.
+illorder := 18
 
 # 'hoptables' is boolean that determines if to leave table
 # when true count drops below 'hoptc'

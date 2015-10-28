@@ -360,7 +360,6 @@ int simplify_action( int x, int allow_double, int allow_split, int allow_surrend
     break;
 
   case RH:
-    printf("RH\n");
     if( allow_surrender ){
       return R;
     } else {
@@ -503,6 +502,7 @@ int simplify_action( int x, int allow_double, int allow_split, int allow_surrend
 			int dealercard_in,
 			int num_decks,
 			int adv_strat,
+			int true_count,
 			bool dhsoft17
 			)
 
@@ -679,17 +679,380 @@ int handaction_complex( int * hand,
 			int allow_surrender,
 			int numdecks,
 			int advanced_stratnum,
+			int true_count,
 			bool dhsoft17)
 {
 
-  return simplify_action(complexhandaction(hand, dealercard, numdecks, advanced_stratnum,dhsoft17), allow_double, allow_split, allow_surrender);
+  return simplify_action(complexhandaction(hand, dealercard, numdecks, advanced_stratnum,true_count,dhsoft17), allow_double, allow_split, allow_surrender);
 
 }
 
+int illustrious_18 ( int * hand_in,
+		     int dealercard,
+		     int allow_double,
+		     int allow_split,
+		     int allow_surrender,
+		     int numdecks,
+		     int order,
+		     int true_count,
+		     bool dhsoft17)
+{
+  int i, total = 0, num_ace = 0, num_cards = 0;
+  int hand[21] = {0,0,0,0,0,0,0,0,0,0,0,0};  
+  if ((order <= 1) || (order > 34)) {
+    return simplify_action(complexhandaction(hand_in, dealercard, numdecks, order,true_count,dhsoft17), allow_double, allow_split, allow_surrender);
+  } else {
+    // Count cards in hand, convert hand type
+    i=0;
+    while( hand_in[i] != 0 ){
+      num_cards++;
+      if( hand_in[i] > 10 ){
+	hand[i] = 10;
+      } else if( hand_in[i] == 1 ) {
+	hand[i] = 11;
+      } else {
+	hand[i] = hand_in[i];
+      }
+      i++;    
+    }
+
+
+    // Total the hand, count the aces
+    for( i=0; i<num_cards; i++){    
+      if( hand[i] == 11 ) { num_ace++; }
+      total += hand[i];
+    }
+
+    // If we're over 21 with an ace, count ace 1 point until under 21 (or until we run out of aces)
+    while( num_ace > 0 ){
+      if( total>21 ){
+	total -= 10;
+	num_ace--;
+      } else {
+	break;
+      }
+    }
+
+
+    if (order < 19) { // Use illustrious 18, NOT sweet 16
+
+      if (order > 1) {
+	
+	if ((total == 16) && (dealercard > 9)) {
+	  if (true_count < 0) { return H; } else {
+	    if (allow_surrender) { return R; } else { return S; }
+	  }
+	}
+      
+	if (order > 2) {
+	  
+	  if ((total == 15) && (dealercard > 9)) {
+	    if (true_count < 4) { return H; } else {
+	      if (allow_surrender) { return R; } else { return S; }
+	    }
+	  }
+	
+	  if (order > 3) {
+
+	    if ((hand_in[0] > 9) && (hand_in[1] > 9) && (dealercard == 5)) {
+	      if (true_count < 5) { return S; } else {
+		if (allow_split == 1) { return P; }
+		else { return S; }
+	      }
+	    }
+	  
+	    if (order > 4) {
+
+	      if ((hand_in[0] > 9) && (hand_in[1] > 9) && (dealercard == 6)) {
+		if (true_count < 4) { return S; } else {
+		  if (allow_split == 1) { return P; }
+		  else { return S; }
+		}
+	      }
+	      
+	      if (order > 5) {
+
+		if ((total == 10) && (dealercard > 9)) {
+		  if (true_count < 4) { return H; } else {
+		    if (allow_double == 1) { return D; }
+		    else { return H; }
+		  }
+		}
+	      
+		if (order > 6) {
+
+		  if ((total == 12) && (dealercard == 3)) {
+		    if (true_count < 2) { return H; } else { return S; }
+		  }
+		
+		  if (order > 7) {
+
+		    if ((total == 12) && (dealercard == 2)) {
+		      if (true_count < 3) { return H; } else { return S; }
+		    }
+		  
+		    if (order > 8) {
+
+		      if ((total == 11) && (dealercard == 1)) {
+			if (true_count < 1) { return H; } else {
+			  if (allow_double == 1) { return D; }
+			  else { return H; }
+			}
+		      }
+		    
+		      if (order > 9) {
+
+			if ((total == 9) && (dealercard == 2)) {
+			  if (true_count < 1) { return H; } else {
+			    if (allow_double == 1) { return D; }
+			    else { return H; }
+			  }
+			}
+		      
+			if (order > 10) {
+
+			  if ((total == 10) && (dealercard == 1)) {
+			    if (true_count < 4) { return H; } else {
+			      if (allow_double == 1) { return D; }
+			      else { return H; }
+			    }
+			  }
+			
+			  if (order > 11) {
+
+			    if ((total == 9) && (dealercard == 7)) {
+			      if (true_count < 3) { return H; } else {
+				if (allow_double == 1) { return D; }
+				else { return H; }
+			      }
+			    }
+			  
+			    if (order > 12) {
+
+			      if ((total == 16) && (dealercard == 9)) {
+				if (true_count < 5) { return H; } else {
+				  if (allow_surrender == 1) { return R; }
+				  else { return H; }
+				}
+			      }
+			    
+			      if (order > 13) {
+				
+				if ((total == 13) && (dealercard == 2)) {
+				  if (true_count < -1) { return H; } else { return S; }
+				}
+			      
+				if (order > 14) {
+
+				  if ((total == 12) && (dealercard == 4)) {
+				    if (true_count < 0) { return H; } else { return S; }
+				  }
+				
+				  if (order > 15) {
+
+				    if ((total == 12) && (dealercard == 5)) {
+				      if (true_count < -2) { return H; } else { return S; }
+				    }
+				  
+				    if (order > 16) {
+
+				      if ((total == 12) && (dealercard == 6)) {
+					if (true_count < -1) { return H; } else { return S; }
+				      }
+				    
+				      if (order > 17) {
+				      
+					if ((total == 13) && (dealercard == 3)) {
+					  if (true_count < -2) { return H;} else { return S; }
+					}
+				      
+				      }
+				    }
+				  }
+				}
+			      }
+			    }
+			  }
+			}
+		      }
+		    }
+		  }
+		}
+	      }
+	    }
+	  }
+	}
+      }
+    } else { // Use sweet 16
+
+      if (order-18 > 1) {
+	
+	if ((total == 16) && (dealercard > 9)) {
+	  if (true_count < 0) { return H; } else {
+	    if (allow_surrender) { return R; } else { return S; }
+	  }
+	}
+      
+	if (order-18 > 2) {
+	  
+	  if ((total == 15) && (dealercard > 9)) {
+	    if (true_count < 4) { return H; } else {
+	      if (allow_surrender) { return R; } else { return S; }
+	    }
+	  }
+	
+	  if (order-18 > 3) {
+	    /*
+	    if ((hand_in[0] > 9) && (hand_in[1] > 9) && (dealercard == 5)) {
+	      if (true_count < 5) { return S; } else {
+		if (allow_split == 1) { return P; }
+		else { return S; }
+	      }
+	    }
+	    */
+	    return S;
+	  
+	    if (order-18 > 4) {
+	      /*
+	      if ((hand_in[0] > 9) && (hand_in[1] > 9) && (dealercard == 6)) {
+		if (true_count < 4) { return S; } else {
+		  if (allow_split == 1) { return P; }
+		  else { return S; }
+		}
+	      }
+	      */
+	      return S;
+	      
+	      if (order-18 > 5) {
+
+		if ((total == 10) && (dealercard > 9)) {
+		  if (true_count < 4) { return H; } else {
+		    if (allow_double == 1) { return D; }
+		    else { return H; }
+		  }
+		}
+
+		if (order-18 > 6) {
+
+		  if ((total == 12) && (dealercard == 3)) {
+		    if (true_count < 2) { return H; } else { return S; }
+		  }
+		
+		  if (order-18 > 7) {
+
+		    if ((total == 12) && (dealercard == 2)) {
+		      if (true_count < 3) { return H; } else { return S; }
+		    }
+		  
+		    if (order-18 > 8) {
+
+		      if ((total == 11) && (dealercard == 1)) {
+			if (true_count < 1) { return H; } else {
+			  if (allow_double == 1) { return D; }
+			  else { return H; }
+			}
+		      }
+		    
+		      if (order-18 > 9) {
+
+			if ((total == 9) && (dealercard == 2)) {
+			  if (true_count < 1) { return H; } else {
+			    if (allow_double == 1) { return D; }
+			    else { return H; }
+			  }
+			}
+		      
+			if (order-18 > 10) {
+
+			  if ((total == 10) && (dealercard == 1)) {
+			    if (true_count < 4) { return H; } else {
+			      if (allow_double == 1) { return D; }
+			      else { return H; }
+			    }
+			  }
+			
+			  if (order-18 > 11) {
+
+			    if ((total == 9) && (dealercard == 7)) {
+			      if (true_count < 3) { return H; } else {
+				if (allow_double == 1) { return D; }
+				else { return H; }
+			      }
+			    }
+			  
+			    if (order-18 > 12) {
+
+			      if ((total == 16) && (dealercard == 9)) {
+				if (true_count < 5) { return H; } else {
+				  if (allow_surrender == 1) { return R; }
+				  else { return H; }
+				}
+			      }
+			    
+			      if (order-18 > 13) {
+				
+				if ((total == 13) && (dealercard == 2)) {
+				  if (true_count < -1) { return H; } else { return S; }
+				}
+			      
+				if (order-18 > 14) {
+
+				  if ((total == 12) && (dealercard == 4)) {
+				    if (true_count < 0) { return H; } else { return S; }
+				  }
+				
+				  if (order-18 > 15) {
+
+				    if ((total == 12) && (dealercard == 5)) {
+				      if (true_count < -2) { return H; } else { return S; }
+				    }
+				  
+				    if (order-18 > 16) {
+
+				      if ((total == 12) && (dealercard == 6)) {
+					if (true_count < -1) { return H; } else { return S; }
+				      }
+				    
+				      if (order-18 > 17) {
+				      
+					if ((total == 13) && (dealercard == 3)) {
+					  if (true_count < -2) { return H;} else { return S; }
+					}
+				      
+				      }
+				    }
+				  }
+				}
+			      }
+			    }
+			  }
+			}
+		      }
+		    }
+		  }
+		}
+	      }
+	    }
+	  }
+	}
+      }
+    }
+
+    return simplify_action(complexhandaction(hand_in, dealercard, numdecks, order,true_count,dhsoft17), allow_double, allow_split, allow_surrender);
+    
+    
+  }
+}
+		     
 
 
 /* // Testing functionality:
 
+#define R  0   // Surrender
+#define S  1   // Stand
+#define H  2   // Hit
+#define D  3   // Double
+#define P  4   // Split
 
 int main( int argc, char *argv[])
 {

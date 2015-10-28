@@ -23,7 +23,7 @@ __global__ void mykernel() {
 
 bool debug_trace = true, debug_printhands = false, psoft = false, dsoft = false;
 bool record_allbank = false, record_hist = false;
-int ndecks, ntrials, strategy, nbets, hoptc = 0;
+int ndecks, ntrials, strategy, illorder = 0, nbets, hoptc = 0;
 bool dhitssoft17 = false, dblaftsplit = true, resplitaces = false;
 bool hitsplitaces = false, surrndr = false, bj3to2 = true;
 bool hoptables = false;
@@ -171,6 +171,7 @@ void play(int trialnum) {
     opendraw();
     flag = 0;
     insflag = 0;
+
     if (dealer[1] == 1) {
       if (ptotal[handno] < 21) {     // Ask for insurance
 	if (pinsurance() == 1) { 
@@ -190,21 +191,21 @@ void play(int trialnum) {
 	  insflag = 2;
 	  bank += 2.0*bets[handno];
 	  flag = 6; // Accepted even money
-	    dcardno = 2;
-	    update_shoe_counts(dealer[0]);          	  
-	    if (dealer[0] < 9) { dtotal += dealer[0]; }
-	    else {dtotal += 10; }
+	  dcardno = 2;
+	  update_shoe_counts(dealer[0]);          	  
+	  if (dealer[0] < 9) { dtotal += dealer[0]; }
+	  else {dtotal += 10; }
 	}
       }
     }
 
-	  
+
     while( flag == 0 ) {
       playeraction = (int)(verb(1));
       switch(playeraction) {
       case 0: // surrender
 	nsur++;
-	bank += bets[handno--]/2.0;
+	bank += 1.0*bets[handno--]/2.0;
 	if (handno < 0) { flag = 1; } // Last hand surrendered
 	else { recomputeptotal(); }
 	break; 
@@ -607,39 +608,8 @@ float openbet() {
   case 0: // Test strategy
     return minbet;
 
-  case 1:
+  case 1: // Basic strategy without counting
     
-    //    return minbet;
-    /*
-    k_b = 2;
-    k_p = true_counts[0]/100.0+0.5;
-    k_q = 1-k_p;
-
-    try = (k_b*k_p - k_q)/k_b * 1000;
-      if( try > minbet * betspread ){
-	try = minbet * betspread;
-      } else if ( try < minbet ){
-	try = minbet;
-      }
-    return try;
-    */
-
-    /*
-    if( true_counts[0] > 2 ) {
-
-      //      try = (bank*0.005) * round( true_counts[0] );
-      try = minbet * round( true_counts[0] );
-
-      if ( try > minbet * betspread ){
-	return  minbet * betspread;
-      } else {
-	return try;
-      }
-
-    } else {
-      return minbet;
-    }
-    */
     return minbet;
 
   case 2:
@@ -648,19 +618,19 @@ float openbet() {
     if (true_counts[0] > 0) {
       switch(betramp) {
       case 1: // sqrt(sqrt(x/5))
-	factor = sqrt(sqrt(true_counts[0]/ramptc))*betspread;
+	factor = sqrt(sqrt(true_counts[0]*1.0/5.0))*betspread;
 	break;
       case 2: // sqrt(x/5)
-	factor = sqrt(true_counts[0]*1.0/ramptc)*betspread;
+	factor = sqrt(true_counts[0]*1.0/5.0)*betspread;
 	break;
       case 3: // x/5
-	factor = true_counts[0]/ramptc*betspread;
+	factor = true_counts[0]*1.0/5.0*betspread;
 	break;
       case 4: // x*x/25
-	factor = true_counts[0]*true_counts[0]/ramptc/ramptc*betspread;
+	factor = true_counts[0]*true_counts[0]*1.0/25.0*betspread;
 	break;
       default: // x*x*x*x/625
-	factor = pow(true_counts[0],4)/pow(1.0*ramptc,4)*betspread;
+	factor = pow(true_counts[0],4)*1.0/625.0*betspread;
 	break;
       }
 
@@ -669,6 +639,10 @@ float openbet() {
     } else { factor = 1.0; }
 	
     return factor*try;
+
+  case 3: // Illustrious 18 without bet spread
+
+    return minbet;
 
   default: // Same as case 0
     return minbet;
@@ -680,8 +654,9 @@ int pevenmoney() {
   switch(strategy) {
   case 999: // test: always ask for even money
     return 1;
-  case 1: // Basic strategy (no counting)
-  case 2: // Basic strategy with bet spread and bet ramp
+    //  case 1: // Basic strategy (no counting)
+    //  case 2: // Basic strategy with bet spread and bet ramp
+  case 3: // Illustrious 18 without bet spread
     return 1;
   default:
     return 0;
@@ -693,6 +668,9 @@ int pinsurance() {
   switch(strategy) {
   case 999: // test: always insure when asked
     return 1;
+  case 3: // Illustrious 18 without bet spread
+    if ((illorder > 0) && (true_counts[0] >= 3)) { return 1; }
+    else { return 0; }
   default:
     return 0;
   }
@@ -768,11 +746,23 @@ int pdecision() {
 			      allow_splits,
 			      allow_surrender,
 			      ndecks,
-			      0,
+			      0, true_counts[0],
 			      dhitssoft17);
 
     break;
 
+  case 3: // Illustrious 18 without bet spread
+
+    return illustrious_18(player[handno],
+			  dealer[1],
+			  allow_doubles,
+			  allow_splits,
+			  allow_surrender,
+			  ndecks,
+			  illorder, true_counts[0],
+			  dhitssoft17);
+    break;
+    
   case 0: // Test strategy, hit if ptotal < 17, else stand
   default: // Same as case 0
     if (ptotal[handno] < 17) {
@@ -847,6 +837,9 @@ void read_params(char* fname) {
   if ( resplithandsmax < 2) { resplithandsmax = 2; }
   sprintf(mystring,"strategy");  
   get_int_param(fname, mystring, &strategy, debug_trace);
+  sprintf(mystring,"illorder");  
+  get_int_param(fname, mystring, &illorder, debug_trace);
+  if (illorder < 0) { illorder = 0; }
   sprintf(mystring,"hoptables");
   get_bool_param(fname, mystring, &hoptables, debug_trace);
   if (hoptables) {
@@ -1023,10 +1016,10 @@ void write_stats(char* p_file) {
   fprintf(fp, "bank = \t\t%f\n", startbank);
   fprintf(fp, "minbet = \t%f\n", minbet);
   fprintf(fp, "betspread = \t%f\n\n", betspread);
-  fprintf(fp, "betramp = \t%f\n\n", betramp);  
+  fprintf(fp, "betramp = \t%d\n\n", betramp);  
 
   fprintf(fp, "Average gain per trial = \t%f\n", avegain);
-  //  printf("%f\t%f\n", avegain/100.0,siggain/100.0);  
+  printf("%f\t%f\n", avegain/100.0, siggain/100.0);  
   fprintf(fp, "Sigma gain over trials = \t%f\n", siggain);
   fprintf(fp, "Average gain per draw = \t%f\n", drawavegain);
   fprintf(fp, "Sigma gain over draws = \t%f\n\n", drawsiggain);
