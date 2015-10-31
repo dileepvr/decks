@@ -7,10 +7,10 @@ debug_trace := false
 debug_printhands := false
 
 # 'ndecks' is integer for number of decks in the shoe (1 to 8)
-ndecks := 2
+ndecks := 6
 
 # 'penetration' is the float shoe penetration percentage (0.1 minimum)
-penetration := 0.5
+penetration := 0.8
 
 # 'bank' is the float starting bank size
 bank := 1000.0
@@ -32,7 +32,7 @@ betramp := 1
 ramptc := 5
 
 # 'ntrials' is the integer number of trials
-ntrials := 10000
+ntrials := 100000
 
 # 'nbets' is the integer that determines
 # what ends a trial
@@ -62,15 +62,16 @@ resplithandsmax := 4
 # 1 - Basic strategy (no counting)
 # 2 - Basic strategy with bet spread and bet ramp
 # 3 - Illustrious 18 without bet spread
+# 4 - Illustrious 18 with bet spread
 # 999 - split if possible, double if < 17, else stand (For testing)
-strategy := 2
+strategy := 4
 
 # 'illorder' is the order upto which illustrious 18 rules apply
 # Illustrious 18 won't be used if 'strategy' doesn't use it,
 # or if 'illorder' is set to 0.
 # For sweet 16, same parameter is used. 'strategy' accounts
 # for the difference.
-illorder := 18
+illorder := 5
 
 # 'hoptables' is boolean that determines if to leave table
 # when true count drops below 'hoptc'

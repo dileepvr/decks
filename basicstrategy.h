@@ -740,7 +740,7 @@ int illustrious_18 ( int * hand_in,
 	
 	if ((total == 16) && (dealercard > 9)) {
 	  if (true_count < 0) { return H; } else {
-	    if (allow_surrender) { return R; } else { return S; }
+	    if (allow_surrender) { return R; } else { return H; }
 	  }
 	}
       
@@ -748,7 +748,7 @@ int illustrious_18 ( int * hand_in,
 	  
 	  if ((total == 15) && (dealercard > 9)) {
 	    if (true_count < 4) { return H; } else {
-	      if (allow_surrender) { return R; } else { return S; }
+	      if (allow_surrender) { return R; } else { return H; }
 	    }
 	  }
 	

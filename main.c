@@ -178,7 +178,7 @@ void play(int trialnum) {
 	  insflag = 1;
 	  if (dealer[0] > 9) {
 	    bank += bets[handno];
-	    flag = 5; // Successfully insured            
+	    flag = 6; // Successfully insured            
 	    dcardno = 2;
 	    update_shoe_counts(dealer[0]);          	  
 	    dtotal = 21;
@@ -190,7 +190,7 @@ void play(int trialnum) {
 	if (pevenmoney() == 1) {
 	  insflag = 2;
 	  bank += 2.0*bets[handno];
-	  flag = 6; // Accepted even money
+	  flag = 7; // Accepted even money
 	  dcardno = 2;
 	  update_shoe_counts(dealer[0]);          	  
 	  if (dealer[0] < 9) { dtotal += dealer[0]; }
@@ -247,7 +247,7 @@ void play(int trialnum) {
       }
     }
 
-    if (flag < 5) { resolvedeal(); }
+    if (flag < 6) { resolvedeal(); }
     //	printf("t= %d, b = %d, avebet = %f, sigbet = %f\n", trialnum, curbets, avebet, sigbet);
 
     //    allbank[nbets*trialnum+curbets-1] = bank;
@@ -613,24 +613,25 @@ float openbet() {
     return minbet;
 
   case 2:
+  case 4:
 
     try = minbet;
     if (true_counts[0] > 0) {
       switch(betramp) {
       case 1: // sqrt(sqrt(x/5))
-	factor = sqrt(sqrt(true_counts[0]*1.0/5.0))*betspread;
+	factor = sqrt(sqrt(true_counts[0]*1.0/ramptc))*betspread;
 	break;
       case 2: // sqrt(x/5)
-	factor = sqrt(true_counts[0]*1.0/5.0)*betspread;
+	factor = sqrt(true_counts[0]*1.0/ramptc)*betspread;
 	break;
       case 3: // x/5
-	factor = true_counts[0]*1.0/5.0*betspread;
+	factor = true_counts[0]*1.0/ramptc*betspread;
 	break;
       case 4: // x*x/25
-	factor = true_counts[0]*true_counts[0]*1.0/25.0*betspread;
+	factor = true_counts[0]*true_counts[0]*1.0/ramptc/ramptc*betspread;
 	break;
       default: // x*x*x*x/625
-	factor = pow(true_counts[0],4)*1.0/625.0*betspread;
+	factor = pow(true_counts[0],4)*1.0/pow(ramptc*1.0,4)*betspread;
 	break;
       }
 
@@ -655,8 +656,9 @@ int pevenmoney() {
   case 999: // test: always ask for even money
     return 1;
     //  case 1: // Basic strategy (no counting)
-    //  case 2: // Basic strategy with bet spread and bet ramp
+  case 2: // Basic strategy with bet spread and bet ramp
   case 3: // Illustrious 18 without bet spread
+  case 4: // Illustrious 18 with bet spread
     return 1;
   default:
     return 0;
@@ -669,6 +671,7 @@ int pinsurance() {
   case 999: // test: always insure when asked
     return 1;
   case 3: // Illustrious 18 without bet spread
+  case 4: // Illustrious 18 with bet spread
     if ((illorder > 0) && (true_counts[0] >= 3)) { return 1; }
     else { return 0; }
   default:
@@ -752,6 +755,7 @@ int pdecision() {
     break;
 
   case 3: // Illustrious 18 without bet spread
+  case 4: // Illustrious 18 with bet spread
 
     return illustrious_18(player[handno],
 			  dealer[1],
