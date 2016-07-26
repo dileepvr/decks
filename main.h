@@ -1,3 +1,8 @@
+/*
+This project has been released under the MIT License, and it's text is
+contained within the accompanying file LICENSE.md.
+All future versions of the MIT License automatically apply.
+*/
 void printhands(int);
 void updateptotal();
 void updatedtotal();
